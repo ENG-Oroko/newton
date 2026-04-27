@@ -37,6 +37,8 @@ const GradesExams = () => {
   const [editValue, setEditValue] = useState("");
   const [showStats, setShowStats] = useState(true);
   const [showGradeDistribution, setShowGradeDistribution] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   const [students, setStudents] = useState([
     { id: 1, name: "John Doe", regNo: "CS/2024/001", course: "CS101", courseName: "Introduction to Programming", exam1: 85, exam2: 78, assignment: 90, total: 84.5, grade: "A-", attendance: 92, remarks: "Excellent performance" },
@@ -53,16 +55,16 @@ const GradesExams = () => {
   const exams = ["all", "Exam 1", "Exam 2", "Assignment", "Total"];
 
   const getGradeColor = (grade) => {
-    if (grade.startsWith('A')) return "text-green-600";
-    if (grade.startsWith('B')) return "text-blue-600";
-    if (grade.startsWith('C')) return "text-yellow-600";
+    if (grade?.startsWith('A')) return "text-green-600";
+    if (grade?.startsWith('B')) return "text-blue-600";
+    if (grade?.startsWith('C')) return "text-yellow-600";
     return "text-red-600";
   };
 
   const getGradeBg = (grade) => {
-    if (grade.startsWith('A')) return "bg-green-100";
-    if (grade.startsWith('B')) return "bg-blue-100";
-    if (grade.startsWith('C')) return "bg-yellow-100";
+    if (grade?.startsWith('A')) return "bg-green-100";
+    if (grade?.startsWith('B')) return "bg-blue-100";
+    if (grade?.startsWith('C')) return "bg-yellow-100";
     return "bg-red-100";
   };
 
@@ -88,7 +90,6 @@ const GradesExams = () => {
       if (student.id === id) {
         const updatedStudent = { ...student, [field]: numValue };
         
-        // Recalculate total and grade
         if (field === 'exam1' || field === 'exam2' || field === 'assignment') {
           const exam1Weight = 0.3;
           const exam2Weight = 0.3;
@@ -128,6 +129,13 @@ const GradesExams = () => {
     return matchesSearch && matchesCourse;
   });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+  const paginatedStudents = filteredStudents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const stats = {
     totalStudents: students.length,
     averageGrade: (students.reduce((sum, s) => sum + s.total, 0) / students.length).toFixed(1),
@@ -161,7 +169,6 @@ const GradesExams = () => {
   };
 
   const bulkUpdateGrades = () => {
-    // Placeholder for bulk update functionality
     alert("Bulk update feature - Select students and update grades in batch");
   };
 
@@ -201,7 +208,7 @@ const GradesExams = () => {
 
         {/* STATS CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 bg-blue-50 rounded-xl">
                 <Users size={20} className="text-blue-600" />
@@ -212,7 +219,7 @@ const GradesExams = () => {
             <p className="text-xs text-blue-600 mt-1">Enrolled</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 bg-green-50 rounded-xl">
                 <Award size={20} className="text-green-600" />
@@ -223,7 +230,7 @@ const GradesExams = () => {
             <p className="text-xs text-green-600 mt-1">Class average</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 bg-purple-50 rounded-xl">
                 <TrendingUp size={20} className="text-purple-600" />
@@ -234,7 +241,7 @@ const GradesExams = () => {
             <p className="text-xs text-purple-600 mt-1">Top performer</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 bg-yellow-50 rounded-xl">
                 <TrendingDown size={20} className="text-yellow-600" />
@@ -245,7 +252,7 @@ const GradesExams = () => {
             <p className="text-xs text-yellow-600 mt-1">Needs attention</p>
           </div>
 
-          <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-2xl p-6 shadow-sm">
+          <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-2xl p-6 shadow-sm transition-all duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 bg-green-200 rounded-xl">
                 <Trophy size={20} className="text-green-700" />
@@ -269,8 +276,11 @@ const GradesExams = () => {
                 type="text"
                 placeholder="Search by name or registration number..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
               />
             </div>
 
@@ -281,8 +291,11 @@ const GradesExams = () => {
               </label>
               <select
                 value={selectedCourse}
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                onChange={(e) => {
+                  setSelectedCourse(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
               >
                 {courses.map(course => (
                   <option key={course} value={course}>
@@ -300,13 +313,13 @@ const GradesExams = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowStats(!showStats)}
-                  className="flex-1 px-3 py-2 bg-gray-100 rounded-xl text-sm hover:bg-gray-200 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-100 rounded-xl text-sm hover:bg-gray-200 transition-colors duration-200"
                 >
                   {showStats ? "Hide" : "Show"} Stats
                 </button>
                 <button
                   onClick={() => setShowGradeDistribution(!showGradeDistribution)}
-                  className="flex-1 px-3 py-2 bg-gray-100 rounded-xl text-sm hover:bg-gray-200 transition-colors"
+                  className="flex-1 px-3 py-2 bg-gray-100 rounded-xl text-sm hover:bg-gray-200 transition-colors duration-200"
                 >
                   Distribution
                 </button>
@@ -317,7 +330,7 @@ const GradesExams = () => {
 
         {/* GRADE DISTRIBUTION CHART */}
         {showGradeDistribution && (
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8 shadow-sm animate-fadeIn">
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <PieChart size={18} className="text-green-600" />
               Grade Distribution
@@ -327,11 +340,11 @@ const GradesExams = () => {
                 <div key={grade}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium">{grade}</span>
-                    <span className="text-gray-600">{count} students</span>
+                    <span className="text-gray-600">{count} students ({((count / stats.totalStudents) * 100).toFixed(1)}%)</span>
                   </div>
-                  <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                     <div 
-                      className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-500"
+                      className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${(count / stats.totalStudents) * 100}%` }}
                     />
                   </div>
@@ -360,9 +373,9 @@ const GradesExams = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredStudents.map((student, index) => (
-                  <tr key={student.id} className="hover:bg-gray-50 transition-colors duration-150">
-                    <td className="px-6 py-4 text-sm text-gray-500">{index + 1}</td>
+                {paginatedStudents.map((student, index) => (
+                  <tr key={student.id} className="group hover:bg-gray-50 transition-colors duration-150">
+                    <td className="px-6 py-4 text-sm text-gray-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                     
                     <td className="px-6 py-4">
                       <div>
@@ -381,22 +394,26 @@ const GradesExams = () => {
                             type="number"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="w-20 px-2 py-1 border rounded-lg text-center"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                             min="0"
                             max="100"
+                            autoFocus
                           />
-                          <button onClick={() => handleSaveGrade(student.id, 'exam1')} className="text-green-600">
+                          <button onClick={() => handleSaveGrade(student.id, 'exam1')} className="text-green-600 hover:bg-green-50 p-1 rounded transition-colors">
                             <Save size={16} />
                           </button>
-                          <button onClick={() => setEditingGrade(null)} className="text-red-600">
+                          <button onClick={() => setEditingGrade(null)} className="text-red-600 hover:bg-red-50 p-1 rounded transition-colors">
                             <X size={16} />
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <span className="font-medium">{student.exam1}</span>
-                          <button onClick={() => startEdit(student, 'exam1', student.exam1)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Edit size={14} className="text-gray-400 hover:text-green-600" />
+                          <button 
+                            onClick={() => startEdit(student, 'exam1', student.exam1)} 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-gray-100 rounded"
+                          >
+                            <Edit size={14} className="text-gray-400 hover:text-green-600 transition-colors" />
                           </button>
                         </div>
                       )}
@@ -410,22 +427,26 @@ const GradesExams = () => {
                             type="number"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="w-20 px-2 py-1 border rounded-lg text-center"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                             min="0"
                             max="100"
+                            autoFocus
                           />
-                          <button onClick={() => handleSaveGrade(student.id, 'exam2')} className="text-green-600">
+                          <button onClick={() => handleSaveGrade(student.id, 'exam2')} className="text-green-600 hover:bg-green-50 p-1 rounded transition-colors">
                             <Save size={16} />
                           </button>
-                          <button onClick={() => setEditingGrade(null)} className="text-red-600">
+                          <button onClick={() => setEditingGrade(null)} className="text-red-600 hover:bg-red-50 p-1 rounded transition-colors">
                             <X size={16} />
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <span className="font-medium">{student.exam2}</span>
-                          <button onClick={() => startEdit(student, 'exam2', student.exam2)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Edit size={14} className="text-gray-400 hover:text-green-600" />
+                          <button 
+                            onClick={() => startEdit(student, 'exam2', student.exam2)} 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-gray-100 rounded"
+                          >
+                            <Edit size={14} className="text-gray-400 hover:text-green-600 transition-colors" />
                           </button>
                         </div>
                       )}
@@ -439,22 +460,26 @@ const GradesExams = () => {
                             type="number"
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
-                            className="w-20 px-2 py-1 border rounded-lg text-center"
+                            className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                             min="0"
                             max="100"
+                            autoFocus
                           />
-                          <button onClick={() => handleSaveGrade(student.id, 'assignment')} className="text-green-600">
+                          <button onClick={() => handleSaveGrade(student.id, 'assignment')} className="text-green-600 hover:bg-green-50 p-1 rounded transition-colors">
                             <Save size={16} />
                           </button>
-                          <button onClick={() => setEditingGrade(null)} className="text-red-600">
+                          <button onClick={() => setEditingGrade(null)} className="text-red-600 hover:bg-red-50 p-1 rounded transition-colors">
                             <X size={16} />
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center justify-center gap-2">
                           <span className="font-medium">{student.assignment}</span>
-                          <button onClick={() => startEdit(student, 'assignment', student.assignment)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Edit size={14} className="text-gray-400 hover:text-green-600" />
+                          <button 
+                            onClick={() => startEdit(student, 'assignment', student.assignment)} 
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 hover:bg-gray-100 rounded"
+                          >
+                            <Edit size={14} className="text-gray-400 hover:text-green-600 transition-colors" />
                           </button>
                         </div>
                       )}
@@ -475,12 +500,20 @@ const GradesExams = () => {
                     {/* Attendance */}
                     <td className="px-6 py-4 text-center">
                       <div className="flex flex-col items-center gap-1">
-                        <span className={`text-sm font-semibold ${student.attendance >= 80 ? 'text-green-600' : student.attendance >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                        <span className={`text-sm font-semibold ${
+                          student.attendance >= 80 ? 'text-green-600' : 
+                          student.attendance >= 60 ? 'text-yellow-600' : 
+                          'text-red-600'
+                        }`}>
                           {student.attendance}%
                         </span>
                         <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
                           <div 
-                            className={`h-full rounded-full ${student.attendance >= 80 ? 'bg-green-500' : student.attendance >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              student.attendance >= 80 ? 'bg-green-500' : 
+                              student.attendance >= 60 ? 'bg-yellow-500' : 
+                              'bg-red-500'
+                            }`}
                             style={{ width: `${student.attendance}%` }}
                           />
                         </div>
@@ -489,13 +522,13 @@ const GradesExams = () => {
                     
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors duration-200" title="View Details">
                           <Eye size={16} className="text-gray-500" />
                         </button>
-                        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors duration-200" title="Send Email">
                           <Mail size={16} className="text-gray-500" />
                         </button>
-                        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                        <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors duration-200" title="Generate Report">
                           <FileText size={16} className="text-gray-500" />
                         </button>
                       </div>
@@ -507,18 +540,44 @@ const GradesExams = () => {
           </div>
 
           {/* TABLE FOOTER */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-600">
-              Showing {filteredStudents.length} of {students.length} students
+              Showing {paginatedStudents.length} of {filteredStudents.length} students
             </p>
             <div className="flex gap-2">
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 border border-gray-300 rounded-lg text-sm transition-colors duration-200 ${
+                  currentPage === 1 
+                    ? 'opacity-50 cursor-not-allowed bg-gray-100' 
+                    : 'hover:bg-gray-100'
+                }`}
+              >
                 Previous
               </button>
-              <button className="px-3 py-1 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors">
-                1
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`px-3 py-1 rounded-lg text-sm transition-colors duration-200 ${
+                    currentPage === i + 1
+                      ? 'bg-green-600 text-white'
+                      : 'border border-gray-300 hover:bg-gray-100'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 border border-gray-300 rounded-lg text-sm transition-colors duration-200 ${
+                  currentPage === totalPages 
+                    ? 'opacity-50 cursor-not-allowed bg-gray-100' 
+                    : 'hover:bg-gray-100'
+                }`}
+              >
                 Next
               </button>
             </div>
@@ -527,46 +586,58 @@ const GradesExams = () => {
 
         {/* QUICK ACTIONS AND TIPS */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6">
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-6 transition-all duration-200 hover:shadow-md">
             <h3 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
               <AlertCircle size={18} />
               Quick Tips
             </h3>
             <ul className="space-y-2 text-sm text-blue-700">
-              <li>• Click on the edit icon next to any score to update grades</li>
-              <li>• Grades are automatically calculated based on weights</li>
-              <li>• Weight distribution: Exam 1 (30%), Exam 2 (30%), Assignment (40%)</li>
-              <li>• Export grades to CSV for record keeping</li>
+              <li className="flex items-start gap-2">• Click on the edit icon next to any score to update grades</li>
+              <li className="flex items-start gap-2">• Grades are automatically calculated based on weights</li>
+              <li className="flex items-start gap-2">• Weight distribution: Exam 1 (30%), Exam 2 (30%), Assignment (40%)</li>
+              <li className="flex items-start gap-2">• Export grades to CSV for record keeping</li>
             </ul>
           </div>
 
-          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-6">
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-6 transition-all duration-200 hover:shadow-md">
             <h3 className="font-semibold text-purple-800 mb-3 flex items-center gap-2">
               <Settings size={18} />
               Grade Scale
             </h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>90-100%:</span>
                 <span className="font-semibold text-green-600">A</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>80-89%:</span>
                 <span className="font-semibold text-blue-600">A-</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>75-79%:</span>
                 <span className="font-semibold text-blue-600">B+</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span>70-74%:</span>
                 <span className="font-semibold text-blue-600">B</span>
               </div>
-              <div className="flex justify-between">
-                <span>60-69%:</span>
+              <div className="flex justify-between items-center">
+                <span>65-69%:</span>
+                <span className="font-semibold text-yellow-600">B-</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>60-64%:</span>
                 <span className="font-semibold text-yellow-600">C+</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
+                <span>55-59%:</span>
+                <span className="font-semibold text-yellow-600">C</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span>50-54%:</span>
+                <span className="font-semibold text-orange-600">C-</span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span>Below 50%:</span>
                 <span className="font-semibold text-red-600">F (Fail)</span>
               </div>
@@ -575,6 +646,24 @@ const GradesExams = () => {
         </div>
 
       </div>
+
+      {/* Add custom CSS animations */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `}</style>
     </DashboardLayout>
   );
 };

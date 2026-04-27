@@ -74,16 +74,15 @@ const Sidebar = ({ closeSidebar }) => {
     ],
     registrator: [
       { name: "Dashboard", path: "/dashboard/registrar", icon: LayoutDashboard },
-  { name: "Registration Approvals", path: "/dashboard/registrar/registration-approvals", icon: ClipboardList },
-  { name: "Results Approval", path: "/dashboard/registrar/results-approval", icon: ClipboardCheck },
-  { name: "Students", path: "/dashboard/registrar/students", icon: Users },
-  { name: "Courses", path: "/dashboard/registrar/courses", icon: BookOpen },
-  { name: "Academic Records", path: "/dashboard/registrar/academic-records", icon: Archive },
-  { name: "Transcripts", path: "/dashboard/registrar/transcripts", icon: FileText },
-  { name: "Academic Policies", path: "/dashboard/registrar/policies", icon: Scale },
-  { name: "Reports", path: "/dashboard/registrar/reports", icon: BarChart3 },
-  { name: "Profile", path: "/dashboard/registrar/profile", icon: User },
-
+      { name: "Registration Approvals", path: "/dashboard/registrar/registration-approvals", icon: ClipboardList },
+      { name: "Results Approval", path: "/dashboard/registrar/results-approval", icon: ClipboardCheck },
+      { name: "Students", path: "/dashboard/registrar/students", icon: Users },
+      { name: "Courses", path: "/dashboard/registrar/courses", icon: BookOpen },
+      { name: "Academic Records", path: "/dashboard/registrar/academic-records", icon: Archive },
+      { name: "Transcripts", path: "/dashboard/registrar/transcripts", icon: FileText },
+      { name: "Academic Policies", path: "/dashboard/registrar/policies", icon: Scale },
+      { name: "Reports", path: "/dashboard/registrar/reports", icon: BarChart3 },
+      { name: "Profile", path: "/dashboard/registrar/profile", icon: User },
     ],
 
     college_admin: [
@@ -98,18 +97,17 @@ const Sidebar = ({ closeSidebar }) => {
 
     super_admin: [
       { name: "Dashboard", path: "/dashboard/director", icon: LayoutDashboard },
-  { name: "Institution Overview", path: "/dashboard/director/overview", icon: Building2 },
-  { name: "Academic Performance", path: "/dashboard/director/academic-performance", icon: GraduationCap },
-  { name: "Financial Overview", path: "/dashboard/director/financial-overview", icon: BarChart3 },
-  { name: "Students Overview", path: "/dashboard/director/students", icon: Users },
-  { name: "Staff Management", path: "/dashboard/director/staff", icon: UserCog },
-  { name: "Departments & Structure", path: "/dashboard/director/departments", icon: Layers },
-  { name: "Audit Logs", path: "/dashboard/director/audit-logs", icon: FileSearch },
-  { name: "System Reports", path: "/dashboard/director/reports", icon: FileBarChart },
-  { name: "Approvals & Overrides", path: "/dashboard/director/overrides", icon: ShieldCheck },
-  { name: "System Settings", path: "/dashboard/director/settings", icon: Settings },
-  { name: "Profile", path: "/dashboard/director/profile", icon: User },
-  
+      { name: "Institution Overview", path: "/dashboard/director/overview", icon: Building2 },
+      { name: "Academic Performance", path: "/dashboard/director/academic-performance", icon: GraduationCap },
+      { name: "Financial Overview", path: "/dashboard/director/financial-overview", icon: BarChart3 },
+      { name: "Students Overview", path: "/dashboard/director/students", icon: Users },
+      { name: "Staff Management", path: "/dashboard/director/staff", icon: UserCog },
+      { name: "Departments & Structure", path: "/dashboard/director/departments", icon: Layers },
+      { name: "Audit Logs", path: "/dashboard/director/audit-logs", icon: FileSearch },
+      { name: "System Reports", path: "/dashboard/director/reports", icon: FileBarChart },
+      { name: "Approvals & Overrides", path: "/dashboard/director/overrides", icon: ShieldCheck },
+      { name: "System Settings", path: "/dashboard/director/settings", icon: Settings },
+      { name: "Profile", path: "/dashboard/director/profile", icon: User },
     ],
   };
 
