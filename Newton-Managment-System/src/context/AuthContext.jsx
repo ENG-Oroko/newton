@@ -12,38 +12,38 @@ const AuthContext = createContext();
 ========================= */
 const USERS = [
   {
-    name: "Student User",
-    email: "student@next.com",
+    name: "Student",
+    email: "student@nit.com",
     password: "2002.dec",
     role: "student",
   },
   {
-    name: "Lecturer User",
-    email: "lecturer@next.com",
+    name: "Lecturer",
+    email: "lecturer@nit.com",
     password: "2002.dec",
     role: "lecturer",
   },
   {
-    name: "Finance User",
-    email: "finance@next.com",
+    name: "Finance",
+    email: "finance@nit.com",
     password: "2002.dec",
     role: "finance",
   },
   {
-    name: "Registrar User",
-    email: "registrator@next.com",
+    name: "Registrar",
+    email: "registrator@nit.com",
     password: "2002.dec",
     role: "registrator",
   },
   {
     name: "College Admin",
-    email: "admin@next.com",
+    email: "admin@nit.com",
     password: "2002.dec",
     role: "college_admin",
   },
   {
     name: "Super Admin",
-    email: "super@next.com",
+    email: "super@nit.com",
     password: "2002.dec",
     role: "super_admin",
   },

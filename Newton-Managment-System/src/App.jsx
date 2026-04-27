@@ -27,7 +27,6 @@ import StudentTimetable from "./pages/student/Timetable.jsx";
 import LecturerInfo from "./pages/student/LecturerInfo.jsx";
 import Notices from "./pages/student/Notices.jsx";
 import StudentProfile from "./pages/student/Profile.jsx";
-import Transcript from "./pages/student/Transcript.jsx";
 import PerformanceAnalytics from "./pages/student/PerformanceAnalytics.jsx";
 
 /* ================= LECTURER PAGES ================= */
@@ -39,7 +38,6 @@ import LecturerTimetable from "./pages/lecturer/Timetable.jsx";
 import Communication from "./pages/lecturer/Communication.jsx";
 import Reports from "./pages/lecturer/Reports.jsx";
 import Notifications from "./pages/lecturer/Notifications.jsx";
-import OnlineClasses from "./pages/lecturer/OnlineClasses.jsx";
 import LecturerProfile from "./pages/lecturer/Profile.jsx";
 import LecturerSettings from "./pages/lecturer/Settings.jsx";
 
@@ -71,9 +69,7 @@ function App() {
         <Route path="/dashboard/student/results" element={<Results />} />
         <Route path="/dashboard/student/timetable" element={<StudentTimetable />} />
         <Route path="/dashboard/student/lecturers" element={<LecturerInfo />} />
-        <Route path="/dashboard/student/notices" element={<Notices />} />
         <Route path="/dashboard/student/profile" element={<StudentProfile />} />
-        <Route path="/dashboard/student/transcript" element={<Transcript />} />
         <Route path="/dashboard/student/analytics" element={<PerformanceAnalytics />} />
 
         {/* ================= LECTURER ================= */}
@@ -96,7 +92,6 @@ function App() {
         <Route path="/dashboard/lecturer/communication" element={<Communication />} />
         <Route path="/dashboard/lecturer/reports" element={<Reports />} />
         <Route path="/dashboard/lecturer/notifications" element={<Notifications />} />
-        <Route path="/dashboard/lecturer/online-classes" element={<OnlineClasses />} />
         <Route path="/dashboard/lecturer/profile" element={<LecturerProfile />} />
         <Route path="/dashboard/lecturer/settings" element={<LecturerSettings />} />
 
