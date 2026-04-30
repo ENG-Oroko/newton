@@ -1,249 +1,267 @@
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClipboardList, Search, Download, FileText, CheckCircle, Clock, Printer, Eye, Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { exportToCSV } from "@/lib/export-utils";
-import { printTranscript } from "@/lib/print-utils";
-const transcriptRequestsData = [
-{ id: "TR001", student: "John Doe", regNo: "CS/2021/001", program: "Computer Science", type: "Official", copies: 2, status: "ready", requestDate: "2024-01-10", fee: 500 },
-{ id: "TR002", student: "Jane Smith", regNo: "ENG/2021/002", program: "Engineering", type: "Official", copies: 3, status: "processing", requestDate: "2024-01-12", fee: 750 },
-{ id: "TR003", student: "Mike Johnson", regNo: "BUS/2022/003", program: "Business Admin", type: "Unofficial", copies: 1, status: "ready", requestDate: "2024-01-08", fee: 0 },
-{ id: "TR004", student: "Sarah Wilson", regNo: "CS/2020/004", program: "Computer Science", type: "Official", copies: 1, status: "pending", requestDate: "2024-01-13", fee: 250 },
-{ id: "TR005", student: "Tom Brown", regNo: "ENG/2022/005", program: "Engineering", type: "Official", copies: 2, status: "collected", requestDate: "2024-01-05", fee: 500 }];
-const transcriptColumns = [
-{ key: "id", label: "Request ID" },
-{ key: "student", label: "Student Name" },
-{ key: "regNo", label: "Reg Number" },
-{ key: "program", label: "Program" },
-{ key: "type", label: "Type" },
-{ key: "copies", label: "Copies" },
-{ key: "fee", label: "Fee (KES)" },
-{ key: "requestDate", label: "Request Date" },
-{ key: "status", label: "Status" }];
+import React, { useState } from "react";
+import toast from "react-hot-toast";
+import DashboardLayout from "../../components/layout/DashboardLayout";
+import { 
+  FileText, 
+  Search, 
+  Filter, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  Download, 
+  Printer, 
+  ExternalLink,
+  ChevronRight,
+  MoreHorizontal,
+  Mail,
+  ShieldCheck,
+  AlertCircle
+} from "lucide-react";
+
 const TranscriptsPage = () => {
-  const [transcriptRequests] = useState(transcriptRequestsData);
-  const [isExporting, setIsExporting] = useState(false);
-  const stats = [
-  { title: "Total Requests", value: "156", icon: FileText, color: "text-blue-600" },
-  { title: "Processing", value: "23", icon: Clock, color: "text-yellow-600" },
-  { title: "Ready for Collection", value: "45", icon: CheckCircle, color: "text-green-600" },
-  { title: "Collected This Month", value: "88", icon: ClipboardList, color: "text-purple-600" }];
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "ready":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Ready</Badge>;
-      case "processing":
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Processing</Badge>;
-      case "pending":
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Pending</Badge>;
-      case "collected":
-        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100">Collected</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-  const generateMockTranscriptData = (request) => {
-    return {
-      studentName: request.student,
-      studentId: request.regNo,
-      program: request.program,
-      faculty: 'Faculty of Science & Technology',
-      dateOfAdmission: '2021-09-01',
-      status: 'In Progress',
-      cgpa: 3.45,
-      totalCredits: 84,
-      semesters: [
-      {
-        name: 'Year 1 - Semester 1',
-        gpa: 3.2,
-        courses: [
-        { code: 'CS101', name: 'Introduction to Programming', credits: 3, grade: 'A', points: 4.0 },
-        { code: 'MAT101', name: 'Calculus I', credits: 3, grade: 'B', points: 3.0 },
-        { code: 'PHY101', name: 'Physics I', credits: 3, grade: 'B+', points: 3.5 },
-        { code: 'ENG101', name: 'Communication Skills', credits: 3, grade: 'A', points: 4.0 }]
-      },
-      {
-        name: 'Year 1 - Semester 2',
-        gpa: 3.5,
-        courses: [
-        { code: 'CS102', name: 'Object-Oriented Programming', credits: 3, grade: 'A', points: 4.0 },
-        { code: 'MAT102', name: 'Calculus II', credits: 3, grade: 'B+', points: 3.5 },
-        { code: 'CS103', name: 'Data Structures', credits: 3, grade: 'A-', points: 3.7 },
-        { code: 'STA101', name: 'Statistics', credits: 3, grade: 'B', points: 3.0 }]
-      },
-      {
-        name: 'Year 2 - Semester 1',
-        gpa: 3.6,
-        courses: [
-        { code: 'CS201', name: 'Algorithms', credits: 3, grade: 'A', points: 4.0 },
-        { code: 'CS202', name: 'Database Systems', credits: 3, grade: 'A-', points: 3.7 },
-        { code: 'CS203', name: 'Computer Networks', credits: 3, grade: 'B+', points: 3.5 },
-        { code: 'CS204', name: 'Operating Systems', credits: 3, grade: 'A', points: 4.0 }]
-      }]
-    };
-  };
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const [requestsList, setRequestsList] = useState([
+    { id: "TR-2026-001", student: "John Kamau", regNo: "BIT/2024/001", type: "Official", status: "Pending", date: "2026-04-29", payment: "Verified" },
+    { id: "TR-2026-002", student: "Mary Wanjiku", regNo: "CS/2023/452", type: "Unofficial", status: "Processed", date: "2026-04-28", payment: "N/A" },
+    { id: "TR-2026-003", student: "Alex Otieno", regNo: "ENG/2022/112", type: "Official", status: "Processing", date: "2026-04-30", payment: "Pending" },
+    { id: "TR-2026-004", student: "Grace Akinyi", regNo: "NUR/2024/089", type: "Official", status: "Processed", date: "2026-04-25", payment: "Verified" },
+    { id: "TR-2026-005", student: "Peter Mwangi", regNo: "BUS/2023/022", type: "Official", status: "Rejected", date: "2026-04-20", payment: "Flagged" },
+  ]);
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <DashboardLayout>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Transcripts</h1>
-          <p className="text-muted-foreground">Manage transcript requests and generation</p>
+          <h1 className="text-2xl font-bold text-gray-800">Transcript Management</h1>
+          <p className="text-sm text-gray-500">Process official and unofficial transcript requests, verify payments, and issue documents</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={isExporting}
+        <div className="flex gap-2 w-full md:w-auto">
+          <button 
             onClick={() => {
-              setIsExporting(true);
-              exportToCSV({ data: transcriptRequests, filename: 'transcripts', columns: transcriptColumns });
-              setIsExporting(false);
-            }}>
-            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-            Export CSV
-          </Button>
-          <Button onClick={() => toast.info('New Request', { description: 'Opening transcript request form...' })}>
-            <FileText className="w-4 h-4 mr-2" />
-            New Request
-          </Button>
+              setIsPrinting(true);
+              const tId = toast.loading("Sending documents to printer...");
+              setTimeout(() => {
+                toast.success("Bulk print completed", { id: tId });
+                setIsPrinting(false);
+              }, 1500);
+            }}
+            disabled={isPrinting}
+            className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium"
+          >
+            <Printer size={16} />
+            {isPrinting ? "Printing..." : "Bulk Print"}
+          </button>
+          <button 
+            onClick={() => {
+              const pendingReqs = requestsList.filter(r => r.status === 'Pending');
+              if (pendingReqs.length > 0) {
+                setRequestsList(prev => prev.map(r => r.status === 'Pending' ? { ...r, status: 'Processing' } : r));
+                toast.success("Requests moved to Processing queue");
+              } else {
+                toast('No pending requests', { icon: 'ℹ️' });
+              }
+            }}
+            className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-lg shadow-green-600/20"
+          >
+            <ShieldCheck size={16} />
+            Verify Request
+          </button>
         </div>
       </div>
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {stats.map((stat) =>
-        <Card key={stat.title}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                </div>
-                <stat.icon className={`w-8 h-8 ${stat.color}`} />
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input placeholder="Search by student name or reg no..." className="pl-10" />
-              </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        {[
+          { label: "Pending Requests", value: "12", color: "text-orange-600", bg: "bg-orange-50", icon: Clock },
+          { label: "Processing", value: "8", color: "text-blue-600", bg: "bg-blue-50", icon: ExternalLink },
+          { label: "Completed Today", value: "24", color: "text-green-600", bg: "bg-green-50", icon: CheckCircle },
+          { label: "Rejected/Issues", value: "2", color: "text-red-600", bg: "bg-red-50", icon: XCircle },
+        ].map((stat, i) => (
+          <div key={i} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex items-center gap-4">
+            <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
+              <stat.icon size={22} />
             </div>
-            <Select>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="ready">Ready</SelectItem>
-                <SelectItem value="collected">Collected</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="official">Official</SelectItem>
-                <SelectItem value="unofficial">Unofficial</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{stat.label}</p>
+              <h2 className="text-xl font-bold text-gray-800">{stat.value}</h2>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-      {/* Transcripts Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Transcript Requests</CardTitle>
-          <CardDescription>All transcript requests and their status</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Request ID</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Reg No</TableHead>
-                <TableHead>Program</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Copies</TableHead>
-                <TableHead>Fee (KES)</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transcriptRequests.map((request) =>
-              <TableRow key={request.id}>
-                  <TableCell className="font-medium">{request.id}</TableCell>
-                  <TableCell>{request.student}</TableCell>
-                  <TableCell>{request.regNo}</TableCell>
-                  <TableCell>{request.program}</TableCell>
-                  <TableCell>
-                    <Badge variant={request.type === "Official" ? "default" : "secondary"}>
-                      {request.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{request.copies}</TableCell>
-                  <TableCell>{request.fee > 0 ? request.fee : "Free"}</TableCell>
-                  <TableCell>{request.requestDate}</TableCell>
-                  <TableCell>{getStatusBadge(request.status)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const transcriptData = generateMockTranscriptData(request);
-                        printTranscript(transcriptData);
-                      }}
-                      title="Preview Transcript">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      {request.status === "ready" &&
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const transcriptData = generateMockTranscriptData(request);
-                        printTranscript(transcriptData);
-                        toast.success('Transcript Ready', { description: 'Print dialog opened for transcript.' });
-                      }}
-                      title="Print Transcript">
-                          <Printer className="w-4 h-4" />
-                        </Button>
-                    }
-                      <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const transcriptData = generateMockTranscriptData(request);
-                        printTranscript(transcriptData);
-                      }}
-                      title="Download Transcript">
-                        <Download className="w-4 h-4" />
-                      </Button>
+        ))}
+      </div>
+
+      {/* Main Table Container */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-8">
+        {/* Filters */}
+        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              type="text"
+              placeholder="Search by student name or request ID..."
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-transparent rounded-xl focus:bg-white focus:border-green-500 focus:outline-none transition text-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <select className="px-4 py-2 bg-gray-50 border-transparent rounded-xl text-sm font-medium focus:outline-none">
+              <option>All Types</option>
+              <option>Official</option>
+              <option>Unofficial</option>
+            </select>
+            <select className="px-4 py-2 bg-gray-50 border-transparent rounded-xl text-sm font-medium focus:outline-none">
+              <option>All Status</option>
+              <option>Pending</option>
+              <option>Processing</option>
+              <option>Processed</option>
+            </select>
+            <button 
+              onClick={() => toast.success('Filters applied')}
+              className="p-2.5 bg-gray-50 text-gray-500 hover:text-green-600 rounded-xl transition border border-transparent hover:border-gray-200"
+            >
+              <Filter size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-gray-50 text-gray-500 border-b border-gray-100">
+              <tr>
+                <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Request ID</th>
+                <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Student Details</th>
+                <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Type</th>
+                <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Payment</th>
+                <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px]">Status</th>
+                <th className="px-6 py-4 font-bold uppercase tracking-wider text-[10px] text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {requestsList.filter(r => r.student.toLowerCase().includes(searchTerm.toLowerCase()) || r.id.toLowerCase().includes(searchTerm.toLowerCase())).map((req, i) => (
+                <tr key={i} className="hover:bg-green-50/20 transition group">
+                  <td className="px-6 py-4 font-bold text-gray-500">{req.id}</td>
+                  <td className="px-6 py-4">
+                    <div>
+                      <p className="font-bold text-gray-800">{req.student}</p>
+                      <p className="text-[10px] text-gray-400 font-bold">{req.regNo}</p>
                     </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>);
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      req.type === 'Official' ? 'bg-purple-50 text-purple-600 border border-purple-100' : 'bg-gray-50 text-gray-600 border border-gray-100'
+                    }`}>
+                      {req.type.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-2 h-2 rounded-full ${
+                        req.payment === 'Verified' ? 'bg-green-500' : 
+                        req.payment === 'Pending' ? 'bg-orange-500' : 
+                        req.payment === 'N/A' ? 'bg-gray-300' : 'bg-red-500'
+                      }`} />
+                      <span className="text-xs font-medium text-gray-600">{req.payment}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      req.status === 'Processed' ? 'bg-green-100 text-green-600' :
+                      req.status === 'Processing' ? 'bg-blue-100 text-blue-600' :
+                      req.status === 'Rejected' ? 'bg-red-100 text-red-600' :
+                      'bg-orange-100 text-orange-600'
+                    }`}>
+                      {req.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button 
+                        onClick={() => toast.success('Downloading transcript PDF')}
+                        className="p-2 hover:bg-white rounded-lg transition text-gray-400 hover:text-green-600 border border-transparent hover:border-gray-100 shadow-none hover:shadow-sm"
+                      >
+                        <Download size={16} />
+                      </button>
+                      <button 
+                        onClick={() => toast.success(`Sending transcript to ${req.student}`)}
+                        className="p-2 hover:bg-white rounded-lg transition text-gray-400 hover:text-blue-600 border border-transparent hover:border-gray-100"
+                      >
+                        <Mail size={16} />
+                      </button>
+                      <button 
+                        onClick={() => toast('More options', { icon: '⚙️' })}
+                        className="p-2 hover:bg-white rounded-lg transition text-gray-400 hover:text-gray-600"
+                      >
+                        <MoreHorizontal size={18} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Information Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <FileText size={18} className="text-green-600" />
+            Transcript Processing Workflow
+          </h3>
+          <div className="space-y-6 relative before:absolute before:left-[11px] before:top-4 before:bottom-4 before:w-0.5 before:bg-gray-100">
+            {[
+              { title: "Verification", desc: "Registrar verifies student academic history and standing.", icon: ShieldCheck, status: "Done" },
+              { title: "Financial Clearance", desc: "Finance office confirms payment for official transcripts.", icon: CheckCircle, status: "Done" },
+              { title: "Generation", desc: "System generates secure PDF with institutional watermark.", icon: Clock, status: "Active" },
+              { title: "Issuance", desc: "Document is sent via email or prepared for physical collection.", icon: Mail, status: "Pending" },
+            ].map((step, i) => (
+              <div key={i} className="flex gap-4 relative z-10">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white border-2 border-white shadow-sm ${
+                  step.status === 'Done' ? 'bg-green-500' : step.status === 'Active' ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'
+                }`}>
+                  <step.icon size={12} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">{step.title}</p>
+                  <p className="text-xs text-gray-400">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-6 text-white shadow-lg flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+              <AlertCircle size={20} />
+              Secure Digital Transcripts
+            </h3>
+            <p className="text-sm text-blue-100 opacity-90 leading-relaxed">
+              New secure digital transcripts are now available for alumni. These documents include a verifiable QR code for employer verification.
+            </p>
+          </div>
+          <div className="mt-8 flex gap-3">
+            <button 
+              onClick={() => toast.success('Feature enabled for Alumni')}
+              className="px-4 py-2 bg-white text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-50 transition"
+            >
+              Enable for Alumni
+            </button>
+            <button 
+              onClick={() => toast('Opening guide...', { icon: '📖' })}
+              className="px-4 py-2 bg-blue-500 text-white rounded-xl text-xs font-bold hover:bg-blue-400 transition"
+            >
+              View Guide
+            </button>
+          </div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
 };
+
 export default TranscriptsPage;

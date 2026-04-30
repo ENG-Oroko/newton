@@ -31,13 +31,13 @@ const Login = () => {
         return "/dashboard/finance";
 
       case "registrator":
-        return "/dashboard/registrator";
+        return "/dashboard/registrar";
 
       case "college_admin":
         return "/dashboard/college-admin";
 
       case "super_admin":
-        return "/dashboard/super-admin";
+        return "/dashboard/director";
 
       default:
         return "/";

@@ -29,7 +29,12 @@ const RoleRoute = ({ children, allowedRoles, redirectTo }) => {
       staff: "/dashboard/staff",
       store_manager: "/dashboard/store-manager",
       admin: "/dashboard/admin",
-      super_admin: "/dashboard/super-admin",
+      super_admin: "/dashboard/director",
+      registrator: "/dashboard/registrar",
+      student: "/dashboard/student",
+      finance: "/dashboard/finance",
+      lecturer: "/dashboard/lecturer",
+      college_admin: "/dashboard/college-admin",
     };
 
     return <Navigate to={redirectTo || fallbackRoutes[user.role]} replace />;
