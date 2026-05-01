@@ -21,6 +21,9 @@ import {
 const TranscriptsPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [requestsList, setRequestsList] = useState([
     { id: "TR-2026-001", student: "John Kamau", regNo: "BIT/2024/001", type: "Official", status: "Pending", date: "2026-04-29", payment: "Verified" },
@@ -179,7 +182,10 @@ const TranscriptsPage = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button 
-                        onClick={() => toast.success('Downloading transcript PDF')}
+                        onClick={() => {
+                          const tId = toast.loading('Downloading transcript PDF...');
+                          setTimeout(() => toast.success('Transcript PDF downloaded', { id: tId }), 1200);
+                        }}
                         className="p-2 hover:bg-white rounded-lg transition text-gray-400 hover:text-green-600 border border-transparent hover:border-gray-100 shadow-none hover:shadow-sm"
                       >
                         <Download size={16} />
@@ -191,7 +197,10 @@ const TranscriptsPage = () => {
                         <Mail size={16} />
                       </button>
                       <button 
-                        onClick={() => toast('More options', { icon: '⚙️' })}
+                        onClick={() => {
+                          setSelectedRequest(req);
+                          setIsDetailModalOpen(true);
+                        }}
                         className="p-2 hover:bg-white rounded-lg transition text-gray-400 hover:text-gray-600"
                       >
                         <MoreHorizontal size={18} />
@@ -260,6 +269,94 @@ const TranscriptsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Detail / Status Modal */}
+      {isDetailModalOpen && selectedRequest && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsDetailModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-blue-600 p-6 text-white relative">
+              <button onClick={() => setIsDetailModalOpen(false)} className="absolute right-4 top-4 p-2 hover:bg-white/20 rounded-full transition">
+                <span className="text-2xl font-bold">×</span>
+              </button>
+              <p className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">{selectedRequest.id}</p>
+              <h2 className="text-2xl font-bold">{selectedRequest.student}</h2>
+              <p className="text-blue-100 opacity-80">{selectedRequest.regNo}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Type</p>
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${selectedRequest.type === 'Official' ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-600'}`}>{selectedRequest.type}</span>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Payment</p>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-2 h-2 rounded-full ${
+                      selectedRequest.payment === 'Verified' ? 'bg-green-500' : 
+                      selectedRequest.payment === 'Pending' ? 'bg-orange-500' : 
+                      selectedRequest.payment === 'N/A' ? 'bg-gray-300' : 'bg-red-500'
+                    }`} />
+                    <span className="text-xs font-bold text-gray-700">{selectedRequest.payment}</span>
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 col-span-2">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Date Requested</p>
+                  <p className="font-semibold text-gray-800">{selectedRequest.date}</p>
+                </div>
+              </div>
+
+              {selectedRequest.status !== 'Processed' && selectedRequest.status !== 'Rejected' && (
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs text-gray-500 font-bold uppercase">Update Status</p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        setIsUpdating(true);
+                        setTimeout(() => {
+                          setRequestsList(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: 'Rejected' } : r));
+                          setIsUpdating(false);
+                          setIsDetailModalOpen(false);
+                          toast.error('Transcript request rejected.');
+                        }, 800);
+                      }}
+                      disabled={isUpdating}
+                      className="flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition text-sm flex items-center justify-center gap-2"
+                    >
+                      <XCircle size={16}/> Reject
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setIsUpdating(true);
+                        setTimeout(() => {
+                          setRequestsList(prev => prev.map(r => r.id === selectedRequest.id ? { ...r, status: 'Processed' } : r));
+                          setIsUpdating(false);
+                          setIsDetailModalOpen(false);
+                          toast.success('Transcript processed and issued!');
+                        }, 800);
+                      }}
+                      disabled={isUpdating}
+                      className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition text-sm shadow-lg shadow-green-600/20 flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={16}/> {isUpdating ? 'Processing...' : 'Mark Processed'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(selectedRequest.status === 'Processed' || selectedRequest.status === 'Rejected') && (
+                <div className={`p-4 rounded-2xl flex items-center gap-3 ${
+                  selectedRequest.status === 'Processed' ? 'bg-green-50' : 'bg-red-50'
+                }`}>
+                  {selectedRequest.status === 'Processed' ? <CheckCircle size={18} className="text-green-600" /> : <XCircle size={18} className="text-red-600" />}
+                  <p className={`text-sm font-semibold ${
+                    selectedRequest.status === 'Processed' ? 'text-green-700' : 'text-red-700'
+                  }`}>This request has been {selectedRequest.status.toLowerCase()}.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

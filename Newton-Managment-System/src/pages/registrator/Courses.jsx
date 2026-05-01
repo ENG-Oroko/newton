@@ -21,6 +21,10 @@ const RegistrarCourses = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [coursesList, setCoursesList] = useState([
     { 
@@ -255,13 +259,19 @@ const RegistrarCourses = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-1">
                       <button 
-                        onClick={() => toast.success(`Viewing details for ${course.code}`)}
+                        onClick={() => {
+                          setSelectedCourse(course);
+                          setIsInfoModalOpen(true);
+                        }}
                         className="p-2 hover:bg-white rounded-lg transition text-gray-400 hover:text-green-600 border border-transparent hover:border-gray-100"
                       >
                         <Info size={16} />
                       </button>
                       <button 
-                        onClick={() => toast.success(`Editing settings for ${course.code}`)}
+                        onClick={() => {
+                          setSelectedCourse(course);
+                          setIsEditModalOpen(true);
+                        }}
                         className="p-2 hover:bg-white rounded-lg transition text-gray-400 hover:text-blue-600 border border-transparent hover:border-gray-100"
                       >
                         <Settings size={16} />
@@ -288,30 +298,55 @@ const RegistrarCourses = () => {
             
             <form onSubmit={(e) => {
               e.preventDefault();
-              toast.success("New course created successfully!");
-              setIsAddModalOpen(false);
+              setIsSubmitting(true);
+              const formData = new FormData(e.target);
+              
+              const newCourse = {
+                code: formData.get("code").toUpperCase(),
+                name: formData.get("name"),
+                department: "Computer Science", // simplified for demo
+                units: parseInt(formData.get("units")),
+                level: parseInt(formData.get("level")),
+                status: "Active",
+                prerequisites: [],
+                description: "Newly added course."
+              };
+
+              // Validation
+              if (coursesList.some(c => c.code === newCourse.code)) {
+                toast.error("Course code already exists!");
+                setIsSubmitting(false);
+                return;
+              }
+
+              setTimeout(() => {
+                setCoursesList(prev => [newCourse, ...prev]);
+                toast.success("New course created successfully!");
+                setIsSubmitting(false);
+                setIsAddModalOpen(false);
+              }, 1000);
             }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Course Code</label>
-                  <input required type="text" placeholder="e.g. CS101" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition uppercase" />
+                  <input required name="code" type="text" placeholder="e.g. CS101" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition uppercase" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Course Name</label>
-                  <input required type="text" placeholder="e.g. Intro to Computer Science" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input required name="name" type="text" placeholder="e.g. Intro to Computer Science" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Credit Units</label>
-                    <input required type="number" min="1" max="10" placeholder="3" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                    <input required name="units" type="number" min="1" max="10" placeholder="3" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                   </div>
                   <div className="flex-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Level</label>
-                    <select required className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
-                      <option>100</option>
-                      <option>200</option>
-                      <option>300</option>
-                      <option>400</option>
+                    <select required name="level" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                      <option value="100">100</option>
+                      <option value="200">200</option>
+                      <option value="300">300</option>
+                      <option value="400">400</option>
                     </select>
                   </div>
                 </div>
@@ -321,18 +356,166 @@ const RegistrarCourses = () => {
                 <button 
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20 disabled:opacity-50 flex items-center justify-center"
                 >
-                  Create Course
+                  {isSubmitting ? "Saving..." : "Create Course"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Course Modal */}
+      {isEditModalOpen && selectedCourse && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsEditModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Edit Course</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              const formData = new FormData(e.target);
+              
+              const updatedCourse = {
+                ...selectedCourse,
+                name: formData.get("name"),
+                units: parseInt(formData.get("units")),
+                level: parseInt(formData.get("level")),
+                status: formData.get("status")
+              };
+
+              setTimeout(() => {
+                setCoursesList(prev => prev.map(c => c.code === selectedCourse.code ? updatedCourse : c));
+                toast.success("Course updated successfully!");
+                setIsSubmitting(false);
+                setIsEditModalOpen(false);
+              }, 1000);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Course Code</label>
+                  <input type="text" value={selectedCourse.code} disabled className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl transition uppercase text-gray-500 cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Course Name</label>
+                  <input required name="name" type="text" defaultValue={selectedCourse.name} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Credit Units</label>
+                    <input required name="units" type="number" min="1" max="10" defaultValue={selectedCourse.units} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Level</label>
+                    <select required name="level" defaultValue={selectedCourse.level} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                      <option value="100">100</option>
+                      <option value="200">200</option>
+                      <option value="300">300</option>
+                      <option value="400">400</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Status</label>
+                  <select required name="status" defaultValue={selectedCourse.status} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center justify-center"
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Info Modal */}
+      {isInfoModalOpen && selectedCourse && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsInfoModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-green-50 text-green-600 rounded-xl"><BookOpen size={24} /></div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">{selectedCourse.code}</h3>
+                  <span className={`text-[10px] font-bold uppercase ${selectedCourse.status === 'Active' ? 'text-green-600' : 'text-red-600'}`}>{selectedCourse.status}</span>
+                </div>
+              </div>
+              <button onClick={() => setIsInfoModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Course Name</p>
+                <p className="font-medium text-gray-800">{selectedCourse.name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Description</p>
+                <p className="text-gray-600 leading-relaxed">{selectedCourse.description}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Department</p>
+                  <p className="font-medium text-gray-800">{selectedCourse.department}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Level / Units</p>
+                  <p className="font-medium text-gray-800">Level {selectedCourse.level} • {selectedCourse.units} Units</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-1">Prerequisites</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {selectedCourse.prerequisites.length > 0 ? (
+                    selectedCourse.prerequisites.map(p => (
+                      <span key={p} className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold">{p}</span>
+                    ))
+                  ) : (
+                    <span className="text-gray-500 italic text-xs">No prerequisites</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setIsInfoModalOpen(false)}
+              className="w-full mt-8 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

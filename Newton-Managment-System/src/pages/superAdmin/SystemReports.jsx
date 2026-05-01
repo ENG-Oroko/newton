@@ -20,15 +20,17 @@ import {
 
 const SystemReports = () => {
   const [activeTab, setActiveTab] = useState("Academic");
-  const [isRequesting, setIsRequesting] = useState(false);
+  const [selectedYear, setSelectedYear] = useState("2026");
+  const [isCustomReportModalOpen, setIsCustomReportModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const reports = [
+  const [reportsList, setReportsList] = useState([
     { title: "Institutional Growth 2026", type: "Strategic", date: "Today", size: "4.8 MB" },
     { title: "Financial Audit Q1", type: "Compliance", date: "Yesterday", size: "12.2 MB" },
     { title: "Staff Distribution Analysis", type: "HR", date: "Apr 28, 2026", size: "2.1 MB" },
     { title: "Student Retention Report", type: "Academic", date: "Apr 25, 2026", size: "3.5 MB" },
     { title: "Senate Policy Impact Study", type: "Legal", date: "Apr 20, 2026", size: "1.2 MB" },
-  ];
+  ]);
 
   return (
     <DashboardLayout>
@@ -38,27 +40,21 @@ const SystemReports = () => {
           <p className="text-sm text-gray-500">Access high-level institutional analytics, strategic audits, and cross-departmental reports</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <button 
-            onClick={() => toast('Fiscal year selection coming soon', { icon: '📅' })}
-            className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
+          <select 
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition text-sm font-medium shadow-sm cursor-pointer"
           >
-            <Calendar size={16} />
-            Fiscal Year 2026
-          </button>
+            <option value="2026">Fiscal Year 2026</option>
+            <option value="2025">Fiscal Year 2025</option>
+            <option value="2024">Fiscal Year 2024</option>
+          </select>
           <button 
-            onClick={() => {
-              setIsRequesting(true);
-              const tId = toast.loading("Opening report builder...");
-              setTimeout(() => {
-                toast.success("Custom report builder ready", { id: tId });
-                setIsRequesting(false);
-              }, 1000);
-            }}
-            disabled={isRequesting}
+            onClick={() => setIsCustomReportModalOpen(true)}
             className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-lg shadow-green-600/20"
           >
             <TrendingUp size={16} />
-            {isRequesting ? "Loading..." : "Request Custom Report"}
+            Request Custom Report
           </button>
         </div>
       </div>
@@ -126,7 +122,7 @@ const SystemReports = () => {
             </div>
 
             <div className="divide-y divide-gray-50">
-              {reports.map((report, i) => (
+              {reportsList.map((report, i) => (
                 <div key={i} className="p-6 hover:bg-green-50/20 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-gray-50 text-gray-400 group-hover:bg-white group-hover:text-green-600 rounded-2xl shadow-sm transition">
@@ -228,6 +224,77 @@ const SystemReports = () => {
 
         </div>
       </div>
+
+      {/* Custom Report Request Modal */}
+      {isCustomReportModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsCustomReportModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 text-green-600 rounded-xl"><TrendingUp size={20}/></div>
+                <h3 className="text-xl font-bold text-gray-800">Request Custom Report</h3>
+              </div>
+              <button onClick={() => setIsCustomReportModalOpen(false)} className="text-gray-400 hover:text-gray-600"><span className="text-2xl font-bold">×</span></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              const fd = new FormData(e.target);
+              const newReport = {
+                title: fd.get('title'),
+                type: fd.get('type'),
+                date: 'Just now',
+                size: 'Pending'
+              };
+              setTimeout(() => {
+                setReportsList(prev => [newReport, ...prev]);
+                toast.success(`"${newReport.title}" report request submitted!`);
+                setIsSubmitting(false);
+                setIsCustomReportModalOpen(false);
+              }, 1200);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Report Title</label>
+                  <input required name="title" type="text" placeholder="e.g. Faculty Performance Q2 2026" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Report Type</label>
+                  <select required name="type" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    <option value="Academic">Academic Metrics</option>
+                    <option value="Compliance">Financial Audits</option>
+                    <option value="HR">Institutional HR</option>
+                    <option value="Strategic">Strategic Planning</option>
+                    <option value="Legal">Legal / Compliance</option>
+                  </select>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Date Range: From</label>
+                    <input required name="from" type="date" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">To</label>
+                    <input required name="to" type="date" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Special Instructions</label>
+                  <textarea name="notes" rows="3" placeholder="Any specific data points, filters, or breakdowns required..." className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition resize-none"></textarea>
+                </div>
+              </div>
+              <div className="mt-6 flex gap-3">
+                <button type="button" onClick={() => setIsCustomReportModalOpen(false)} disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={isSubmitting}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20 disabled:opacity-50 flex items-center justify-center">
+                  {isSubmitting ? "Submitting..." : "Request Report"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

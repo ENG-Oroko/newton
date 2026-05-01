@@ -21,19 +21,22 @@ import {
 
 const AuditLogs = () => {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedLog, setSelectedLog] = useState(null);
 
-  const logs = [
+  const [logsList, setLogsList] = useState([
     { id: "LOG-4821", user: "Dr. David Okello", action: "Approved 156 unit registrations", module: "Registrar", ip: "192.168.1.10", status: "Success", time: "10 mins ago" },
     { id: "LOG-4822", user: "Mary Wanjiku", action: "Updated financial ledger for Sem 1", module: "Finance", ip: "192.168.1.45", status: "Success", time: "1h ago" },
     { id: "LOG-4823", user: "System", action: "Automated database backup completed", module: "Server", ip: "localhost", status: "Success", time: "3h ago" },
     { id: "LOG-4824", user: "Unknown", action: "Failed login attempt (3 times)", module: "Security", ip: "45.12.88.92", status: "Failed", time: "5h ago" },
     { id: "LOG-4825", user: "Prof. James", action: "Deleted exam results draft", module: "Academic", ip: "192.168.1.12", status: "Warning", time: "8h ago" },
     { id: "LOG-4826", user: "Director Admin", action: "Changed system permissions for 'Finance'", module: "Admin", ip: "10.0.0.5", status: "Success", time: "1 day ago" },
-  ];
+  ]);
 
   return (
-    <DashboardLayout>
+    <>
+      <DashboardLayout>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">System Audit Logs</h1>
@@ -56,7 +59,11 @@ const AuditLogs = () => {
             {isExporting ? "Exporting..." : "Export Logs"}
           </button>
           <button 
-            onClick={() => toast.success('Cleared logs older than 30 days')}
+            onClick={() => {
+              const cutoff = ["1 day ago", "2 days ago"];
+              setLogsList(prev => prev.filter(l => !cutoff.includes(l.time)));
+              toast.success("Logs older than 30 days cleared");
+            }}
             className="flex-1 md:flex-none px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium"
           >
             <Trash2 size={16} />
@@ -104,6 +111,8 @@ const AuditLogs = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
               type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by user, action, or module..."
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl focus:border-green-500 focus:outline-none transition text-sm shadow-sm"
             />
@@ -143,8 +152,11 @@ const AuditLogs = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {logs.filter(l => activeFilter === "All" || l.status === activeFilter).map((log, i) => (
-                <tr key={i} className="hover:bg-gray-50/50 transition group">
+              {logsList
+                .filter(l => activeFilter === "All" || l.status === activeFilter)
+                .filter(l => !searchTerm || l.user.toLowerCase().includes(searchTerm.toLowerCase()) || l.action.toLowerCase().includes(searchTerm.toLowerCase()) || l.module.toLowerCase().includes(searchTerm.toLowerCase()))
+                .map((log, i) => (
+                <tr key={i} className="hover:bg-gray-50/50 transition group cursor-pointer" onClick={() => setSelectedLog(log)}>
                   <td className="px-6 py-5 text-xs font-bold text-gray-400">{log.id}</td>
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-3">
@@ -256,6 +268,46 @@ const AuditLogs = () => {
         </div>
       </div>
     </DashboardLayout>
+
+      {/* Log Detail Modal */}
+      {selectedLog && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setSelectedLog(null)}>
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className={`p-6 text-white relative ${
+              selectedLog.status === 'Success' ? 'bg-green-600' :
+              selectedLog.status === 'Failed' ? 'bg-red-600' : 'bg-orange-500'
+            }`}>
+              <button onClick={() => setSelectedLog(null)} className="absolute right-4 top-4 p-2 hover:bg-white/20 rounded-full transition">
+                <span className="text-2xl font-bold">×</span>
+              </button>
+              <p className="text-white/70 text-xs font-bold uppercase tracking-wider mb-1">{selectedLog.id}</p>
+              <h2 className="text-xl font-bold">{selectedLog.user}</h2>
+              <p className="text-white/80 text-sm mt-1">{selectedLog.module} Module</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <p className="text-xs text-gray-500 font-bold uppercase mb-1">Action Performed</p>
+                <p className="font-semibold text-gray-800">{selectedLog.action}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">IP Address</p>
+                  <p className="font-mono text-sm font-semibold text-gray-800">{selectedLog.ip}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Time</p>
+                  <p className="font-semibold text-gray-800">{selectedLog.time}</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 pb-6">
+              <button onClick={() => setSelectedLog(null)}
+                className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

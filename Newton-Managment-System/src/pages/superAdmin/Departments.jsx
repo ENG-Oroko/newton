@@ -19,8 +19,12 @@ import {
 
 const Departments = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDept, setSelectedDept] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const structure = [
+  const [structure, setStructure] = useState([
     { 
       faculty: "Faculty of Science & Tech", 
       depts: [
@@ -42,7 +46,13 @@ const Departments = () => {
         { name: "Nursing", head: "Grace Akinyi", students: 620, programs: 3, health: 96 }
       ]
     }
-  ];
+  ]);
+
+  const flatDepts = structure.flatMap(f => f.depts.map(d => ({ ...d, faculty: f.faculty })));
+  const filteredStructure = !searchTerm ? structure : structure.map(f => ({
+    ...f,
+    depts: f.depts.filter(d => d.name.toLowerCase().includes(searchTerm.toLowerCase()) || d.head.toLowerCase().includes(searchTerm.toLowerCase()))
+  })).filter(f => f.depts.length > 0);
 
   return (
     <DashboardLayout>
@@ -95,6 +105,8 @@ const Departments = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search departments or faculty heads..."
             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-transparent focus:bg-white focus:border-green-500 rounded-xl focus:outline-none transition text-sm"
           />
@@ -109,7 +121,7 @@ const Departments = () => {
 
       {/* Hierarchy View */}
       <div className="space-y-8">
-        {structure.map((faculty, i) => (
+        {filteredStructure.map((faculty, i) => (
           <div key={i} className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
             <div className="bg-gray-50/50 px-8 py-5 flex justify-between items-center border-b border-gray-100">
               <div className="flex items-center gap-3">
@@ -119,7 +131,7 @@ const Departments = () => {
                 <h3 className="font-black text-gray-800 uppercase tracking-wide">{faculty.faculty}</h3>
               </div>
               <button 
-                onClick={() => toast('Faculty options', { icon: '⚙️' })}
+                onClick={() => toast(`Managing ${faculty.faculty}`, { icon: '🏛️' })}
                 className="p-2 hover:bg-white rounded-lg transition text-gray-400"
               >
                 <MoreVertical size={18} />
@@ -179,7 +191,10 @@ const Departments = () => {
                       </td>
                       <td className="px-6 py-5 text-right">
                         <button 
-                          onClick={() => toast.success(`Viewing details for ${dept.name}`)}
+                          onClick={() => {
+                            setSelectedDept({ ...dept, faculty: faculty.faculty });
+                            setIsDetailModalOpen(true);
+                          }}
                           className="p-2 text-gray-300 hover:text-green-600 transition"
                         >
                           <ChevronRight size={18} />
@@ -253,24 +268,50 @@ const Departments = () => {
             
             <form onSubmit={(e) => {
               e.preventDefault();
-              toast.success("Added to institutional structure successfully!");
-              setIsAddModalOpen(false);
+              setIsSubmitting(true);
+              const fd = new FormData(e.target);
+              const type = fd.get('type');
+              const name = fd.get('name');
+              const head = fd.get('head') || 'Unassigned';
+
+              setTimeout(() => {
+                if (type === 'Faculty') {
+                  setStructure(prev => [...prev, { faculty: name, depts: [] }]);
+                  toast.success(`Faculty "${name}" added to structure!`);
+                } else {
+                  const targetFaculty = fd.get('faculty');
+                  setStructure(prev => prev.map(f =>
+                    f.faculty === targetFaculty
+                      ? { ...f, depts: [...f.depts, { name, head, students: 0, programs: 0, health: 80 }] }
+                      : f
+                  ));
+                  toast.success(`Department "${name}" added to ${targetFaculty}!`);
+                }
+                setIsSubmitting(false);
+                setIsAddModalOpen(false);
+              }, 1000);
             }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Type</label>
-                  <select className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
-                    <option>Faculty / School</option>
-                    <option>Department</option>
+                  <select name="type" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    <option value="Faculty">Faculty / School</option>
+                    <option value="Department">Department</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Name</label>
-                  <input required type="text" placeholder="e.g. Faculty of Arts" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input required name="name" type="text" placeholder="e.g. Faculty of Arts" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Parent Faculty (if Dept)</label>
+                  <select name="faculty" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    {structure.map((f, i) => <option key={i} value={f.faculty}>{f.faculty}</option>)}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Appointed Head (Optional)</label>
-                  <input type="text" placeholder="e.g. Dr. Jane Doe" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input name="head" type="text" placeholder="e.g. Dr. Jane Doe" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
               </div>
 
@@ -278,18 +319,62 @@ const Departments = () => {
                 <button 
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20 disabled:opacity-50 flex items-center justify-center"
                 >
-                  Add Entity
+                  {isSubmitting ? 'Adding...' : 'Add Entity'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dept Detail Modal */}
+      {isDetailModalOpen && selectedDept && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsDetailModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-green-600 p-6 text-white relative">
+              <button onClick={() => setIsDetailModalOpen(false)} className="absolute right-4 top-4 p-2 hover:bg-white/20 rounded-full transition">
+                <span className="text-2xl font-bold">×</span>
+              </button>
+              <p className="text-green-100 text-xs font-bold uppercase tracking-wider mb-1">{selectedDept.faculty}</p>
+              <h2 className="text-2xl font-bold">{selectedDept.name}</h2>
+              <p className="text-green-100 opacity-80 text-sm mt-1">Head: {selectedDept.head}</p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-center">
+                  <p className="text-xl font-black text-gray-800">{selectedDept.students}</p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase">Students</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-center">
+                  <p className="text-xl font-black text-gray-800">{selectedDept.programs}</p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase">Programs</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-center">
+                  <p className="text-xl font-black text-green-600">{selectedDept.health}%</p>
+                  <p className="text-[10px] text-gray-500 font-bold uppercase">Health</p>
+                </div>
+              </div>
+              <div className="mb-4">
+                <p className="text-xs text-gray-500 font-bold uppercase mb-2">Departmental Health Score</p>
+                <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-1000 ${
+                    selectedDept.health > 90 ? 'bg-green-500' : selectedDept.health > 80 ? 'bg-blue-500' : 'bg-orange-500'
+                  }`} style={{ width: `${selectedDept.health}%` }} />
+                </div>
+              </div>
+              <button onClick={() => setIsDetailModalOpen(false)}
+                className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition mt-2">Close</button>
+            </div>
           </div>
         </div>
       )}

@@ -19,16 +19,19 @@ import {
 
 const AcademicRecords = () => {
   const [activeTab, setActiveTab] = useState("Records");
+  const [searchTerm, setSearchTerm] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-  const records = [
-    { student: "John Kamau", regNo: "BIT/2024/001", sem: "Sem 1 2025", gpa: "3.85", units: 18, standing: "First Class", date: "Jan 2026", program: "BSc. IT" },
-    { student: "Mary Wanjiku", regNo: "CS/2023/452", sem: "Sem 1 2025", gpa: "3.92", units: 18, standing: "First Class", date: "Jan 2026", program: "BSc. CS" },
-    { student: "Alex Otieno", regNo: "ENG/2022/112", sem: "Sem 1 2025", gpa: "2.10", units: 21, standing: "Pass", date: "Jan 2026", program: "BEng. Civil" },
-    { student: "Grace Akinyi", regNo: "NUR/2024/089", sem: "Sem 1 2025", gpa: "3.45", units: 15, standing: "Second Upper", date: "Jan 2026", program: "BSc. Nursing" },
-    { student: "Sarah Wilson", regNo: "BIT/2025/102", sem: "Sem 1 2025", gpa: "3.20", units: 18, standing: "Second Upper", date: "Jan 2026", program: "BSc. IT" },
-  ];
+  const [recordsList, setRecordsList] = useState([
+    { id: "REC-01", student: "John Kamau", regNo: "BIT/2024/001", sem: "Sem 1 2025", gpa: "3.85", units: 18, standing: "First Class", date: "Jan 2026", program: "BSc. IT", verified: true },
+    { id: "REC-02", student: "Mary Wanjiku", regNo: "CS/2023/452", sem: "Sem 1 2025", gpa: "3.92", units: 18, standing: "First Class", date: "Jan 2026", program: "BSc. CS", verified: false },
+    { id: "REC-03", student: "Alex Otieno", regNo: "ENG/2022/112", sem: "Sem 1 2025", gpa: "2.10", units: 21, standing: "Pass", date: "Jan 2026", program: "BEng. Civil", verified: false },
+    { id: "REC-04", student: "Grace Akinyi", regNo: "NUR/2024/089", sem: "Sem 1 2025", gpa: "3.45", units: 15, standing: "Second Upper", date: "Jan 2026", program: "BSc. Nursing", verified: true },
+    { id: "REC-05", student: "Sarah Wilson", regNo: "BIT/2025/102", sem: "Sem 1 2025", gpa: "3.20", units: 18, standing: "Second Upper", date: "Jan 2026", program: "BSc. IT", verified: false },
+  ]);
 
   return (
     <DashboardLayout>
@@ -58,6 +61,7 @@ const AcademicRecords = () => {
               setIsVerifying(true);
               const tId = toast.loading("Verifying records against Senate DB...");
               setTimeout(() => {
+                setRecordsList(prev => prev.map(r => ({ ...r, verified: true })));
                 toast.success("All records verified. 0 issues found.", { id: tId });
                 setIsVerifying(false);
               }, 2000);
@@ -114,6 +118,8 @@ const AcademicRecords = () => {
             <input 
               type="text"
               placeholder="Search by student name or registration number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-transparent rounded-xl focus:bg-white focus:border-green-500 focus:outline-none transition text-sm"
             />
           </div>
@@ -146,7 +152,7 @@ const AcademicRecords = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {records.map((rec, i) => (
+              {recordsList.filter(r => r.student.toLowerCase().includes(searchTerm.toLowerCase()) || r.regNo.toLowerCase().includes(searchTerm.toLowerCase())).map((rec, i) => (
                 <tr key={i} className="hover:bg-green-50/20 transition group">
                   <td className="px-6 py-4">
                     <div>
@@ -173,8 +179,11 @@ const AcademicRecords = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button 
-                      onClick={() => toast.success(`Opening detailed record for ${rec.student}`)}
-                      className="p-2 hover:bg-white rounded-lg transition text-gray-400 hover:text-green-600 border border-transparent hover:border-gray-100"
+                      onClick={() => {
+                        setSelectedRecord(rec);
+                        setIsInfoModalOpen(true);
+                      }}
+                      className={`p-2 hover:bg-white rounded-lg transition border border-transparent hover:border-gray-100 ${rec.verified ? 'text-green-600' : 'text-gray-400 hover:text-green-600'}`}
                     >
                       <FileText size={16} />
                     </button>
@@ -194,7 +203,7 @@ const AcademicRecords = () => {
             Top Performing Students (Current Semester)
           </h3>
           <div className="space-y-4">
-            {records.slice(0, 3).map((r, i) => (
+            {recordsList.slice(0, 3).map((r, i) => (
               <div key={i} className="flex items-center justify-between group">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-yellow-50 text-yellow-600 flex items-center justify-center font-bold text-sm border border-yellow-100">
@@ -243,6 +252,93 @@ const AcademicRecords = () => {
           <AlertCircle size={100} className="absolute -bottom-5 -right-5 text-white/10" />
         </div>
       </div>
+
+      {/* Detail Modal */}
+      {isInfoModalOpen && selectedRecord && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsInfoModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className={`p-6 text-white relative ${selectedRecord.verified ? 'bg-green-600' : 'bg-gray-800'}`}>
+              <button 
+                onClick={() => setIsInfoModalOpen(false)}
+                className="absolute right-4 top-4 p-2 hover:bg-white/20 rounded-full transition"
+              >
+                <span className="text-2xl font-bold">×</span>
+              </button>
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-bold">
+                  {selectedRecord.student.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedRecord.student}</h2>
+                  <p className="text-white/80">{selectedRecord.regNo}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Program</p>
+                  <p className="font-semibold text-gray-800">{selectedRecord.program}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Semester</p>
+                  <p className="font-semibold text-gray-800">{selectedRecord.sem}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">GPA / Units</p>
+                  <p className="font-bold text-gray-800 text-lg">{selectedRecord.gpa} <span className="text-xs text-gray-500 font-medium">({selectedRecord.units} Cr)</span></p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Standing</p>
+                  <span className={`px-2 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
+                      selectedRecord.standing === 'First Class' ? 'bg-green-100 text-green-600' :
+                      selectedRecord.standing === 'Second Upper' ? 'bg-blue-100 text-blue-600' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {selectedRecord.standing}
+                  </span>
+                </div>
+              </div>
+
+              {!selectedRecord.verified && (
+                <div className="mt-4 p-4 bg-orange-50 border border-orange-100 rounded-2xl flex items-start gap-3">
+                  <AlertCircle size={20} className="text-orange-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h4 className="text-sm font-bold text-orange-800">Verification Pending</h4>
+                    <p className="text-xs text-orange-700 mt-1">This academic record has not yet been verified against the Senate database.</p>
+                    <button 
+                      onClick={() => {
+                        setIsVerifying(true);
+                        setTimeout(() => {
+                          setRecordsList(prev => prev.map(r => r.id === selectedRecord.id ? { ...r, verified: true } : r));
+                          setSelectedRecord(prev => ({ ...prev, verified: true }));
+                          setIsVerifying(false);
+                          toast.success("Record verified successfully!");
+                        }, 1000);
+                      }}
+                      disabled={isVerifying}
+                      className="mt-3 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl transition disabled:opacity-50"
+                    >
+                      {isVerifying ? "Verifying..." : "Verify Record Now"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {selectedRecord.verified && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-100 rounded-2xl flex items-center gap-3">
+                  <ShieldCheck size={20} className="text-green-600" />
+                  <div>
+                    <h4 className="text-sm font-bold text-green-800">Verified Record</h4>
+                    <p className="text-xs text-green-700 mt-0.5">Record officially matches the Senate database.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

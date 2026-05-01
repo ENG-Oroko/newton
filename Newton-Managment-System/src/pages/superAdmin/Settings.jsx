@@ -22,6 +22,10 @@ const SystemSettings = () => {
   const [selfReg, setSelfReg] = useState(true);
   const [autoPub, setAutoPub] = useState(false);
   const [mpesa, setMpesa] = useState(true);
+  const [notifEmail, setNotifEmail] = useState(true);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [activeSection, setActiveSection] = useState("General Settings");
+  const [isSaving, setIsSaving] = useState(false);
 
   return (
     <DashboardLayout>
@@ -32,18 +36,33 @@ const SystemSettings = () => {
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <button 
-            onClick={() => toast('Defaults reset', { icon: '🔄' })}
+            onClick={() => {
+              setSelfReg(true);
+              setAutoPub(false);
+              setMpesa(true);
+              setNotifEmail(true);
+              setMaintenanceMode(false);
+              toast.success('Settings restored to institutional defaults');
+            }}
             className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
           >
             <RefreshCw size={16} />
             Reset Defaults
           </button>
           <button 
-            onClick={() => toast.success('Settings saved successfully')}
-            className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-lg shadow-green-600/20"
+            onClick={() => {
+              setIsSaving(true);
+              const tId = toast.loading('Saving system configuration...');
+              setTimeout(() => {
+                toast.success('Settings saved successfully', { id: tId });
+                setIsSaving(false);
+              }, 1200);
+            }}
+            disabled={isSaving}
+            className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-lg shadow-green-600/20 disabled:opacity-50"
           >
             <Save size={16} />
-            Save Changes
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
@@ -62,9 +81,12 @@ const SystemSettings = () => {
           ].map((item, i) => (
             <button
               key={i}
-              onClick={() => toast.success(`Switched to ${item.label}`)}
+              onClick={() => {
+                setActiveSection(item.label);
+                toast.success(`Switched to ${item.label}`);
+              }}
               className={`w-full p-4 rounded-2xl flex items-center gap-4 transition-all ${
-                item.active 
+                activeSection === item.label
                   ? "bg-green-600 text-white shadow-lg shadow-green-600/20" 
                   : "bg-white border border-gray-100 text-gray-500 hover:border-green-600 hover:bg-green-50/50"
               }`}
@@ -179,8 +201,37 @@ const SystemSettings = () => {
                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${mpesa ? 'right-1' : 'left-1'}`} />
                 </div>
               </div>
-            </div>
-          </div>
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl group hover:bg-green-50/50 transition">
+                <div>
+                  <p className="text-sm font-bold text-gray-700">Email Notifications</p>
+                  <p className="text-[10px] text-gray-400">Send automated emails for key system events</p>
+                </div>
+                <div 
+                  onClick={() => { setNotifEmail(!notifEmail); toast.success(`Email notifications ${!notifEmail ? 'enabled' : 'disabled'}`); }}
+                  className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${notifEmail ? 'bg-green-600' : 'bg-gray-200'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${notifEmail ? 'right-1' : 'left-1'}`} />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-orange-50 border border-orange-100 rounded-2xl group hover:bg-orange-100/50 transition">
+                <div>
+                  <p className="text-sm font-bold text-orange-800">Maintenance Mode</p>
+                  <p className="text-[10px] text-orange-600">Takes the system offline for students and lecturers</p>
+                </div>
+                <div 
+                  onClick={() => { 
+                    setMaintenanceMode(!maintenanceMode);
+                    toast(maintenanceMode ? 'Maintenance mode deactivated' : '⚠️ Maintenance mode activated — students will lose access', { icon: maintenanceMode ? '✅' : '⚠️' });
+                  }}
+                  className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${maintenanceMode ? 'bg-orange-500' : 'bg-gray-200'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${maintenanceMode ? 'right-1' : 'left-1'}`} />
+                </div>
+              </div>
+
+            </div>{/* end space-y-6 */}
+          </div>{/* end bg-white card */}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex flex-col justify-between h-48">

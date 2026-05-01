@@ -24,9 +24,13 @@ import {
 
 const RegistrarStudents = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("Active");
+  const [statusFilter, setStatusFilter] = useState("All Status");
   const [isExporting, setIsExporting] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [studentsList, setStudentsList] = useState([
     { id: "STU-001", name: "John Kamau", regNo: "BIT/2024/001", program: "BSc. IT", year: 3, status: "Active", standing: "Good", gpa: "3.8", email: "john.k@university.ac.ke" },
@@ -209,19 +213,27 @@ const RegistrarStudents = () => {
 
             <div className="mt-6 flex gap-2">
               <button 
-                onClick={() => toast.success(`Opening email client for ${student.email}`)}
+                onClick={() => {
+                  toast.success(`Opening email client for ${student.email}`);
+                }}
                 className="flex-1 py-2 bg-gray-50 hover:bg-green-600 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-gray-600 border border-gray-100"
               >
                 <Mail size={14} /> Email
               </button>
               <button 
-                onClick={() => toast('Profile view coming soon', { icon: '👤' })}
+                onClick={() => {
+                  setSelectedStudent(student);
+                  setIsInfoModalOpen(true);
+                }}
                 className="flex-1 py-2 bg-gray-50 hover:bg-green-600 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 text-gray-600 border border-gray-100"
               >
                 <ChevronRight size={14} /> Profile
               </button>
               <button 
-                onClick={() => toast('More options', { icon: '⚙️' })}
+                onClick={() => {
+                  setSelectedStudent(student);
+                  setIsEditModalOpen(true);
+                }}
                 className="p-2 bg-gray-50 hover:bg-gray-100 rounded-xl text-gray-400 transition border border-gray-100"
               >
                 <MoreHorizontal size={18} />
@@ -261,25 +273,50 @@ const RegistrarStudents = () => {
             
             <form onSubmit={(e) => {
               e.preventDefault();
-              toast.success("New student admitted successfully!");
-              setIsAddModalOpen(false);
+              setIsSubmitting(true);
+              const formData = new FormData(e.target);
+              
+              const newStudent = {
+                id: `STU-00${studentsList.length + 1}`,
+                name: formData.get("name"),
+                regNo: formData.get("regNo"),
+                program: formData.get("program"),
+                year: 1,
+                status: "Active",
+                standing: "Good",
+                gpa: "0.0",
+                email: `${formData.get("name").split(' ')[0].toLowerCase()}@university.ac.ke`
+              };
+
+              if (studentsList.some(s => s.regNo === newStudent.regNo)) {
+                toast.error("Registration Number already exists!");
+                setIsSubmitting(false);
+                return;
+              }
+
+              setTimeout(() => {
+                setStudentsList(prev => [newStudent, ...prev]);
+                toast.success("New student admitted successfully!");
+                setIsSubmitting(false);
+                setIsAddModalOpen(false);
+              }, 1000);
             }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
-                  <input required type="text" placeholder="e.g. Jane Doe" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input required name="name" type="text" placeholder="e.g. Jane Doe" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Registration Number</label>
-                  <input required type="text" placeholder="e.g. BIT/2026/001" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input required name="regNo" type="text" placeholder="e.g. BIT/2026/001" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Program</label>
-                  <select required className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
-                    <option>BSc. IT</option>
-                    <option>BSc. CS</option>
-                    <option>BEng. Civil</option>
-                    <option>BSc. Nursing</option>
+                  <select required name="program" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    <option value="BSc. IT">BSc. IT</option>
+                    <option value="BSc. CS">BSc. CS</option>
+                    <option value="BEng. Civil">BEng. Civil</option>
+                    <option value="BSc. Nursing">BSc. Nursing</option>
                   </select>
                 </div>
               </div>
@@ -288,18 +325,152 @@ const RegistrarStudents = () => {
                 <button 
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20 disabled:opacity-50 flex items-center justify-center"
                 >
-                  Admit Student
+                  {isSubmitting ? "Processing..." : "Admit Student"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Student Modal */}
+      {isEditModalOpen && selectedStudent && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsEditModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Edit Student Status</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              const formData = new FormData(e.target);
+              
+              const updatedStudent = {
+                ...selectedStudent,
+                status: formData.get("status"),
+                year: parseInt(formData.get("year"))
+              };
+
+              setTimeout(() => {
+                setStudentsList(prev => prev.map(s => s.id === selectedStudent.id ? updatedStudent : s));
+                toast.success("Student updated successfully!");
+                setIsSubmitting(false);
+                setIsEditModalOpen(false);
+              }, 1000);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
+                  <input type="text" value={selectedStudent.name} disabled className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl transition text-gray-500 cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Year of Study</label>
+                  <select required name="year" defaultValue={selectedStudent.year} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    <option value="1">Year 1</option>
+                    <option value="2">Year 2</option>
+                    <option value="3">Year 3</option>
+                    <option value="4">Year 4</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Enrollment Status</label>
+                  <select required name="status" defaultValue={selectedStudent.status} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    <option value="Active">Active</option>
+                    <option value="Probation">Probation</option>
+                    <option value="Suspended">Suspended</option>
+                    <option value="Graduated">Graduated</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center justify-center"
+                >
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Modal */}
+      {isInfoModalOpen && selectedStudent && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsInfoModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-green-600 p-6 text-white relative">
+              <button 
+                onClick={() => setIsInfoModalOpen(false)}
+                className="absolute right-4 top-4 p-2 hover:bg-white/20 rounded-full transition"
+              >
+                <XCircle size={20} />
+              </button>
+              <div className="flex items-center gap-4 mb-2">
+                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-bold">
+                  {selectedStudent.name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedStudent.name}</h2>
+                  <p className="text-green-100 opacity-80">{selectedStudent.regNo}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Program</p>
+                  <p className="font-semibold text-gray-800">{selectedStudent.program}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Year of Study</p>
+                  <p className="font-semibold text-gray-800">Year {selectedStudent.year}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Current CGPA</p>
+                  <p className="font-bold text-green-600 text-lg">{selectedStudent.gpa}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                  <p className="text-xs text-gray-500 font-bold uppercase mb-1">Standing</p>
+                  <div className="flex items-center gap-1">
+                    {getStandingIcon(selectedStudent.standing)}
+                    <span className="font-semibold text-gray-800">{selectedStudent.standing}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs text-gray-500 font-bold uppercase mb-2 border-b border-gray-100 pb-2">Contact Info</p>
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700 flex items-center gap-2"><Mail size={16} className="text-gray-400"/> {selectedStudent.email}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -22,6 +22,11 @@ import {
 const StaffManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
   const [staffList, setStaffList] = useState([
     { name: "Dr. Sarah Kim", role: "Dean, Computing", dept: "Computer Science", status: "Active", email: "s.kim@university.ac.ke", joined: "2018", type: "Full-Time" },
@@ -48,7 +53,7 @@ const StaffManagement = () => {
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <button 
-            onClick={() => toast('Role permissions modal coming soon', { icon: '🛡️' })}
+            onClick={() => setIsRoleModalOpen(true)}
             className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
           >
             <ShieldCheck size={16} />
@@ -167,13 +172,19 @@ const StaffManagement = () => {
 
             <div className="mt-6 flex gap-2 pt-4 border-t border-gray-50">
               <button 
-                onClick={() => toast.success(`Viewing profile for ${member.name}`)}
+                onClick={() => {
+                  setSelectedMember(member);
+                  setIsViewModalOpen(true);
+                }}
                 className="flex-1 py-2.5 bg-gray-50 hover:bg-green-600 hover:text-white rounded-2xl text-xs font-black transition flex items-center justify-center gap-2 text-gray-600 border border-transparent hover:border-green-600 shadow-sm"
               >
                 View Profile
               </button>
               <button 
-                onClick={() => toast('More options', { icon: '⚙️' })}
+                onClick={() => {
+                  setSelectedMember(member);
+                  setIsEditModalOpen(true);
+                }}
                 className="p-2.5 bg-gray-50 hover:bg-gray-100 rounded-2xl text-gray-400 transition"
               >
                 <MoreHorizontal size={20} />
@@ -204,37 +215,59 @@ const StaffManagement = () => {
             
             <form onSubmit={(e) => {
               e.preventDefault();
-              toast.success("New staff member added successfully!");
-              setIsAddModalOpen(false);
+              setIsSubmitting(true);
+              const fd = new FormData(e.target);
+              const newMember = {
+                name: fd.get("name"),
+                role: fd.get("role"),
+                dept: fd.get("dept"),
+                email: fd.get("email"),
+                type: fd.get("type"),
+                status: "Active",
+                joined: new Date().getFullYear().toString()
+              };
+              if (staffList.some(s => s.email === newMember.email)) {
+                toast.error("Staff member with that email already exists!");
+                setIsSubmitting(false);
+                return;
+              }
+              setTimeout(() => {
+                setStaffList(prev => [newMember, ...prev]);
+                toast.success("New staff member added successfully!");
+                setIsSubmitting(false);
+                setIsAddModalOpen(false);
+              }, 1000);
             }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
-                  <input required type="text" placeholder="e.g. Dr. Jane Doe" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input required name="name" type="text" placeholder="e.g. Dr. Jane Doe" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
-                  <input required type="email" placeholder="e.g. jane.doe@university.ac.ke" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input required name="email" type="email" placeholder="e.g. jane.doe@university.ac.ke" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Role</label>
-                  <input required type="text" placeholder="e.g. Lecturer" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input required name="role" type="text" placeholder="e.g. Lecturer" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Department</label>
-                    <select className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
-                      <option>Computer Science</option>
-                      <option>Mathematics</option>
-                      <option>Engineering</option>
+                    <select name="dept" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                      <option value="Computer Science">Computer Science</option>
+                      <option value="Mathematics">Mathematics</option>
+                      <option value="Engineering">Engineering</option>
+                      <option value="Nursing">Nursing</option>
+                      <option value="Business">Business</option>
                     </select>
                   </div>
                   <div className="flex-1">
                     <label className="block text-xs font-bold text-gray-500 mb-1">Contract Type</label>
-                    <select className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
-                      <option>Full-Time</option>
-                      <option>Part-Time</option>
-                      <option>Contract</option>
+                    <select name="type" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                      <option value="Full-Time">Full-Time</option>
+                      <option value="Part-Time">Part-Time</option>
+                      <option value="Contract">Contract</option>
                     </select>
                   </div>
                 </div>
@@ -244,18 +277,159 @@ const StaffManagement = () => {
                 <button 
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20 disabled:opacity-50 flex items-center justify-center"
                 >
-                  Add Staff
+                  {isSubmitting ? "Adding..." : "Add Staff"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Profile Modal */}
+      {isViewModalOpen && selectedMember && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsViewModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-blue-600 p-6 text-white relative">
+              <button onClick={() => setIsViewModalOpen(false)} className="absolute right-4 top-4 p-2 hover:bg-white/20 rounded-full transition">
+                <span className="text-2xl font-bold">×</span>
+              </button>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center text-2xl font-bold">
+                  {selectedMember.name.split(' ').map(n => n[0]).join('')}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">{selectedMember.name}</h2>
+                  <p className="text-blue-100 text-sm">{selectedMember.role}</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {[{label:'Department', val: selectedMember.dept},{label:'Contract', val: selectedMember.type},{label:'Status', val: selectedMember.status},{label:'Joined', val: selectedMember.joined}].map((item, i) => (
+                  <div key={i} className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <p className="text-xs text-gray-500 font-bold uppercase mb-1">{item.label}</p>
+                    <p className="font-semibold text-gray-800">{item.val}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <p className="text-xs text-gray-500 font-bold uppercase mb-1">Email</p>
+                <p className="font-semibold text-gray-800 flex items-center gap-2"><Mail size={16} className="text-gray-400"/>{selectedMember.email}</p>
+              </div>
+              <button onClick={() => setIsViewModalOpen(false)}
+                className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Modal */}
+      {isEditModalOpen && selectedMember && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsEditModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Edit Staff Member</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition"><span className="text-2xl font-bold">×</span></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              const fd = new FormData(e.target);
+              const updated = { ...selectedMember, role: fd.get('role'), status: fd.get('status'), type: fd.get('type') };
+              setTimeout(() => {
+                setStaffList(prev => prev.map(s => s.email === selectedMember.email ? updated : s));
+                toast.success("Staff member updated successfully!");
+                setIsSubmitting(false);
+                setIsEditModalOpen(false);
+              }, 800);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
+                  <input type="text" value={selectedMember.name} disabled className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Role</label>
+                  <input required name="role" type="text" defaultValue={selectedMember.role} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Status</label>
+                    <select name="status" defaultValue={selectedMember.status} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                      <option value="Active">Active</option>
+                      <option value="Sabbatical">Sabbatical</option>
+                      <option value="On Leave">On Leave</option>
+                      <option value="Terminated">Terminated</option>
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Contract</label>
+                    <select name="type" defaultValue={selectedMember.type} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                      <option value="Full-Time">Full-Time</option>
+                      <option value="Part-Time">Part-Time</option>
+                      <option value="Contract">Contract</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8 flex gap-3">
+                <button type="button" onClick={() => setIsEditModalOpen(false)} disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={isSubmitting}
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center justify-center">
+                  {isSubmitting ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Role Permissions Modal */}
+      {isRoleModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsRoleModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><ShieldCheck size={22}/></div>
+                <h3 className="text-xl font-bold text-gray-800">Role Permissions Matrix</h3>
+              </div>
+              <button onClick={() => setIsRoleModalOpen(false)} className="text-gray-400 hover:text-gray-600"><span className="text-2xl font-bold">×</span></button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="py-2 text-left text-gray-500 font-bold uppercase tracking-wider">Module</th>
+                    {['Dean','Prof.','Lecturer','Staff'].map(r => <th key={r} className="py-2 text-center text-gray-500 font-bold uppercase tracking-wider">{r}</th>)}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {[['Student Records',true,true,false,false],['Results Entry',true,true,true,false],['Transcript Issue',true,false,false,true],['Course Mgmt',true,true,true,false],['Financial View',true,false,false,false]].map(([module,...perms], i) => (
+                    <tr key={i} className="hover:bg-gray-50 transition">
+                      <td className="py-3 font-semibold text-gray-700">{module}</td>
+                      {perms.map((p, j) => (
+                        <td key={j} className="py-3 text-center">
+                          {p ? <CheckCircle size={16} className="text-green-500 mx-auto"/> : <span className="text-gray-200 text-lg">—</span>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button onClick={() => setIsRoleModalOpen(false)}
+              className="w-full mt-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition">Close</button>
           </div>
         </div>
       )}

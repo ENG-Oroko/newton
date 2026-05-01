@@ -20,14 +20,18 @@ import {
 
 const RegistrarPolicies = () => {
   const [activeTab, setActiveTab] = useState("Academic Rules");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isNewPolicyModalOpen, setIsNewPolicyModalOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const policies = [
+  const [policiesList, setPoliciesList] = useState([
     { title: "Grading Scale Policy 2026", category: "Grading", version: "2.1", status: "Active", date: "2026-01-10", senateId: "SN-442" },
     { title: "Student Progression Requirements", category: "Academics", version: "1.5", status: "Active", date: "2025-12-05", senateId: "SN-410" },
     { title: "Examination Conduct Policy", category: "Exams", version: "3.0", status: "Draft", date: "2026-04-15", senateId: "Pending" },
     { title: "Credit Transfer Framework", category: "Admissions", version: "1.2", status: "Active", date: "2024-11-20", senateId: "SN-388" },
     { title: "Thesis Submission Guidelines", category: "Post-Graduate", version: "1.0", status: "Active", date: "2026-02-28", senateId: "SN-455" },
-  ];
+  ]);
 
   const gradingSystems = [
     { range: "70% - 100%", grade: "A", points: "4.0", classification: "First Class" },
@@ -46,14 +50,14 @@ const RegistrarPolicies = () => {
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <button 
-            onClick={() => toast('Viewing version history...', { icon: '📜' })}
+            onClick={() => setIsHistoryModalOpen(true)}
             className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
           >
             <History size={16} />
             Version History
           </button>
           <button 
-            onClick={() => toast.success('Opening New Policy Editor')}
+            onClick={() => setIsNewPolicyModalOpen(true)}
             className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-lg shadow-green-600/20"
           >
             <Plus size={16} />
@@ -91,6 +95,8 @@ const RegistrarPolicies = () => {
                 <input 
                   type="text"
                   placeholder="Search policies by keyword..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-transparent rounded-xl focus:bg-white focus:border-green-500 focus:outline-none transition text-sm"
                 />
               </div>
@@ -103,7 +109,7 @@ const RegistrarPolicies = () => {
             </div>
 
             <div className="divide-y divide-gray-100">
-              {policies.map((policy, i) => (
+              {policiesList.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase())).map((policy, i) => (
                 <div key={i} className="p-4 hover:bg-gray-50 transition group flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-start gap-4">
                     <div className="mt-1 p-2 bg-green-50 text-green-600 rounded-xl shadow-sm">
@@ -244,6 +250,129 @@ const RegistrarPolicies = () => {
         </div>
 
       </div>
+
+      {/* New Policy Modal */}
+      {isNewPolicyModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsNewPolicyModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">New Policy Draft</h3>
+              <button onClick={() => setIsNewPolicyModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <AlertTriangle className="opacity-0" size={24} /> {/* Placeholder to center the title if needed, or just standard X */}
+                <span className="text-2xl font-bold">×</span>
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              const formData = new FormData(e.target);
+              
+              const newPolicy = {
+                title: formData.get("title"),
+                category: formData.get("category"),
+                version: "1.0",
+                status: "Draft",
+                date: new Date().toISOString().split('T')[0],
+                senateId: "Pending"
+              };
+
+              setTimeout(() => {
+                setPoliciesList(prev => [newPolicy, ...prev]);
+                toast.success("New policy draft created!");
+                setIsSubmitting(false);
+                setIsNewPolicyModalOpen(false);
+              }, 1000);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Policy Title</label>
+                  <input required name="title" type="text" placeholder="e.g. Remote Exam Protocol" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Category</label>
+                  <select required name="category" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    <option value="Grading">Grading</option>
+                    <option value="Academics">Academics</option>
+                    <option value="Exams">Exams</option>
+                    <option value="Admissions">Admissions</option>
+                    <option value="Post-Graduate">Post-Graduate</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Initial Draft Content</label>
+                  <textarea required rows="4" placeholder="Brief description of the policy..." className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition resize-none"></textarea>
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsNewPolicyModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20 disabled:opacity-50 flex items-center justify-center"
+                >
+                  {isSubmitting ? "Saving..." : "Create Draft"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Version History Modal */}
+      {isHistoryModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsHistoryModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><History size={24} /></div>
+                <h3 className="text-xl font-bold text-gray-800">System Version History</h3>
+              </div>
+              <button onClick={() => setIsHistoryModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <span className="text-2xl font-bold">×</span>
+              </button>
+            </div>
+            
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              {[
+                { version: "v2026.1", date: "April 12, 2026", user: "Senate Admin", changes: "Updated Grading Scale Policy 2026 (v2.1)" },
+                { version: "v2026.0", date: "Jan 10, 2026", user: "Registrar", changes: "Published Grading Scale Policy 2026 (v2.0)" },
+                { version: "v2025.4", date: "Dec 05, 2025", user: "Registrar", changes: "Updated Student Progression Requirements (v1.5)" },
+                { version: "v2025.3", date: "Aug 22, 2025", user: "Senate Admin", changes: "Archived Legacy Credit Transfer rules" }
+              ].map((log, i) => (
+                <div key={i} className="flex gap-4 group">
+                  <div className="flex flex-col items-center">
+                    <div className="w-3 h-3 rounded-full bg-blue-500 border-4 border-blue-100" />
+                    {i !== 3 && <div className="w-0.5 h-full bg-gray-100 my-1" />}
+                  </div>
+                  <div className="pb-4">
+                    <p className="text-sm font-bold text-gray-800">{log.version} <span className="text-gray-400 text-xs font-medium ml-2">{log.date}</span></p>
+                    <p className="text-xs text-gray-600 mt-1">{log.changes}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-2 flex items-center gap-1">
+                      <ShieldCheck size={10} /> By {log.user}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setIsHistoryModalOpen(false)}
+              className="w-full mt-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

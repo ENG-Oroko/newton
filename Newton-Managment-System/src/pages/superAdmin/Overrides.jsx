@@ -22,14 +22,19 @@ import {
 const Overrides = () => {
   const [activeTab, setActiveTab] = useState("Pending");
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [selectedAction, setSelectedAction] = useState(null); // { type: 'Approve' | 'Reject', ovr: object }
+  const [isNewOverrideModalOpen, setIsNewOverrideModalOpen] = useState(false);
+  const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pinValue, setPinValue] = useState("");
+  const [pinError, setPinError] = useState("");
 
-  const overrides = [
+  const [overridesList, setOverridesList] = useState([
     { id: "OVR-2026-001", student: "John Kamau", regNo: "BIT/2024/001", request: "Grade Override (F to C)", reason: "Missing Script Found", requestedBy: "Dr. Sarah Kim", status: "Pending", time: "2h ago" },
     { id: "OVR-2026-002", student: "Mary Wanjiku", regNo: "CS/2023/452", request: "Financial Clearance", reason: "Bank Draft Verified", requestedBy: "Finance Office", status: "Approved", time: "5h ago" },
     { id: "OVR-2026-003", student: "Alex Otieno", regNo: "ENG/2022/112", request: "Registration Unlock", reason: "Late Fee Waived", requestedBy: "Registrar", status: "Rejected", time: "1 day ago" },
     { id: "OVR-2026-004", student: "Grace Akinyi", regNo: "NUR/2024/089", request: "Unit Cap Extension", reason: "Extra Credits Approved", requestedBy: "Dean Health", status: "Pending", time: "3h ago" },
-  ];
+  ]);
 
   return (
     <DashboardLayout>
@@ -40,14 +45,14 @@ const Overrides = () => {
         </div>
         <div className="flex gap-2 w-full md:w-auto">
           <button 
-            onClick={() => toast('Opening override logs', { icon: '📜' })}
+            onClick={() => setIsLogsModalOpen(true)}
             className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-sm"
           >
             <History size={16} />
             Override Logs
           </button>
           <button 
-            onClick={() => toast.success('New override request drafted')}
+            onClick={() => setIsNewOverrideModalOpen(true)}
             className="flex-1 md:flex-none px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-lg shadow-red-600/20"
           >
             <ShieldAlert size={16} />
@@ -120,7 +125,7 @@ const Overrides = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {overrides.filter(o => activeTab === "All" || o.status === activeTab).map((ovr, i) => (
+              {overridesList.filter(o => activeTab === "All" || o.status === activeTab).map((ovr, i) => (
                 <tr key={i} className="hover:bg-red-50/10 transition group">
                   <td className="px-8 py-6">
                     <div>
@@ -253,34 +258,174 @@ const Overrides = () => {
 
             <form onSubmit={(e) => {
               e.preventDefault();
-              toast.success(`Override ${selectedAction.ovr.id} ${selectedAction.type}d successfully`);
-              setIsConfirmModalOpen(false);
+              if (pinValue.length < 4) {
+                setPinError("PIN must be 4 digits");
+                return;
+              }
+              if (pinValue !== "1234") { // Demo PIN
+                setPinError("Incorrect PIN. Please try again.");
+                return;
+              }
+              setIsSubmitting(true);
+              setPinError("");
+              const newStatus = selectedAction.type === 'Approve' ? 'Approved' : 'Rejected';
+              setTimeout(() => {
+                setOverridesList(prev => prev.map(o => o.id === selectedAction.ovr.id ? { ...o, status: newStatus } : o));
+                selectedAction.type === 'Approve'
+                  ? toast.success(`Override ${selectedAction.ovr.id} Approved!`)
+                  : toast.error(`Override ${selectedAction.ovr.id} Rejected.`);
+                setIsSubmitting(false);
+                setIsConfirmModalOpen(false);
+                setPinValue("");
+              }, 800);
             }}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1">Enter PIN to Confirm</label>
-                  <input required type="password" placeholder="••••" maxLength={4} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-red-500 transition text-center tracking-widest text-lg" />
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Enter PIN to Confirm <span className="text-gray-300 font-normal italic">(Demo PIN: 1234)</span></label>
+                  <input 
+                    required 
+                    type="password" 
+                    value={pinValue}
+                    onChange={(e) => { setPinValue(e.target.value); setPinError(""); }}
+                    placeholder="••••" 
+                    maxLength={4} 
+                    className={`w-full px-4 py-2 border rounded-xl focus:outline-none transition text-center tracking-widest text-lg ${
+                      pinError ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-red-500'
+                    }`} />
+                  {pinError && <p className="text-red-500 text-xs mt-1 font-medium">{pinError}</p>}
                 </div>
               </div>
 
               <div className="mt-8 flex gap-3">
                 <button 
                   type="button"
-                  onClick={() => setIsConfirmModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+                  onClick={() => { setIsConfirmModalOpen(false); setPinValue(""); setPinError(""); }}
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className={`flex-1 py-3 text-white rounded-xl font-bold transition shadow-lg ${
+                  disabled={isSubmitting}
+                  className={`flex-1 py-3 text-white rounded-xl font-bold transition shadow-lg disabled:opacity-50 flex items-center justify-center ${
                     selectedAction.type === 'Approve' ? 'bg-green-600 hover:bg-green-700 shadow-green-600/20' : 'bg-red-600 hover:bg-red-700 shadow-red-600/20'
                   }`}
                 >
-                  Confirm {selectedAction.type}
+                  {isSubmitting ? "Processing..." : `Confirm ${selectedAction.type}`}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* New Override Request Modal */}
+      {isNewOverrideModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsNewOverrideModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 text-red-600 rounded-xl"><ShieldAlert size={22}/></div>
+                <h3 className="text-xl font-bold text-gray-800">New Override Request</h3>
+              </div>
+              <button onClick={() => setIsNewOverrideModalOpen(false)} className="text-gray-400 hover:text-gray-600"><span className="text-2xl font-bold">×</span></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              const fd = new FormData(e.target);
+              const newOverride = {
+                id: `OVR-2026-00${overridesList.length + 1}`,
+                student: fd.get('student'),
+                regNo: fd.get('regNo'),
+                request: fd.get('request'),
+                reason: fd.get('reason'),
+                requestedBy: "Director",
+                status: "Pending",
+                time: "Just now"
+              };
+              setTimeout(() => {
+                setOverridesList(prev => [newOverride, ...prev]);
+                toast.success("Override request submitted!");
+                setIsSubmitting(false);
+                setIsNewOverrideModalOpen(false);
+                setActiveTab("Pending");
+              }, 1000);
+            }}>
+              <div className="space-y-4">
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Student Name</label>
+                    <input required name="student" type="text" placeholder="e.g. John Kamau" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-red-500 transition" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Reg. Number</label>
+                    <input required name="regNo" type="text" placeholder="e.g. BIT/2024/001" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-red-500 transition" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Override Type</label>
+                  <select required name="request" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-red-500 transition text-gray-700">
+                    <option value="Grade Override">Grade Override</option>
+                    <option value="Financial Clearance">Financial Clearance</option>
+                    <option value="Registration Unlock">Registration Unlock</option>
+                    <option value="Unit Cap Extension">Unit Cap Extension</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Justification / Reason</label>
+                  <textarea required name="reason" rows="3" placeholder="Provide a clear justification for this override..." className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-red-500 transition resize-none"></textarea>
+                </div>
+              </div>
+              <div className="mt-6 flex gap-3">
+                <button type="button" onClick={() => setIsNewOverrideModalOpen(false)} disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={isSubmitting}
+                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition shadow-lg shadow-red-600/20 disabled:opacity-50 flex items-center justify-center">
+                  {isSubmitting ? "Submitting..." : "Submit Override"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Override Logs Modal */}
+      {isLogsModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsLogsModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-gray-100 text-gray-700 rounded-xl"><History size={22}/></div>
+                <h3 className="text-xl font-bold text-gray-800">Override Audit Logs</h3>
+              </div>
+              <button onClick={() => setIsLogsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><span className="text-2xl font-bold">×</span></button>
+            </div>
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+              {overridesList.filter(o => o.status !== 'Pending').map((log, i) => (
+                <div key={i} className={`p-4 rounded-2xl border ${
+                  log.status === 'Approved' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'
+                }`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-xs font-black text-gray-500 uppercase tracking-wider">{log.id}</p>
+                      <p className="font-bold text-gray-800 mt-1">{log.request}</p>
+                      <p className="text-xs text-gray-500 mt-1">Student: {log.student} • {log.regNo}</p>
+                    </div>
+                    <span className={`text-[10px] font-black px-2 py-1 rounded-full uppercase ${
+                      log.status === 'Approved' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                    }`}>{log.status}</span>
+                  </div>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-3">{log.time} • By {log.requestedBy}</p>
+                </div>
+              ))}
+              {overridesList.filter(o => o.status !== 'Pending').length === 0 && (
+                <p className="text-center text-gray-400 text-sm py-8">No completed override logs yet.</p>
+              )}
+            </div>
+            <button onClick={() => setIsLogsModalOpen(false)}
+              className="w-full mt-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition">Close</button>
           </div>
         </div>
       )}

@@ -19,8 +19,12 @@ import {
 } from "lucide-react";
 
 const RegistrarReports = () => {
-  const [activeReport, setActiveReport] = useState("Enrollment");
+  const [activeReport, setActiveReport] = useState("Enrollment Reports");
   const [isPrinting, setIsPrinting] = useState(false);
+  const [selectedYear, setSelectedYear] = useState("2026");
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(null);
 
   const enrollmentStats = [
     { department: "Computer Science", current: 850, previous: 780, trend: 8.9 },
@@ -60,13 +64,16 @@ const RegistrarReports = () => {
             <Printer size={16} />
             {isPrinting ? "Printing..." : "Print Dashboard"}
           </button>
-          <button 
-            onClick={() => toast('Academic year selection coming soon', { icon: '📅' })}
-            className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-lg shadow-green-600/20"
+          <select 
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="flex-1 md:flex-none px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl transition flex items-center justify-center gap-2 text-sm font-medium shadow-lg shadow-green-600/20 cursor-pointer"
           >
-            <Calendar size={16} />
-            Academic Year 2026
-          </button>
+            <option value="2026">Academic Year 2026</option>
+            <option value="2025">Academic Year 2025</option>
+            <option value="2024">Academic Year 2024</option>
+            <option value="2023">Academic Year 2023</option>
+          </select>
         </div>
       </div>
 
@@ -97,7 +104,7 @@ const RegistrarReports = () => {
             <h3 className="text-sm font-bold mb-2">Custom Analytics</h3>
             <p className="text-[10px] text-gray-400 mb-4 leading-relaxed">Need a specialized report for the Senate or Directorate? Request a custom SQL export.</p>
             <button 
-              onClick={() => toast.success('Custom export request sent to IT support')}
+              onClick={() => setIsExportModalOpen(true)}
               className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
             >
               Request Export <ChevronRight size={14} />
@@ -124,8 +131,11 @@ const RegistrarReports = () => {
                   <Filter size={18} />
                 </button>
                 <button 
-                  onClick={() => toast.success(`Downloading ${activeReport} Report PDF...`)}
-                  className="px-3 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-bold flex items-center gap-2"
+                  onClick={() => {
+                    const tId = toast.loading(`Downloading ${activeReport} PDF...`);
+                    setTimeout(() => toast.success(`${activeReport} PDF downloaded`, { id: tId }), 1500);
+                  }}
+                  className="px-3 py-1 bg-green-50 text-green-600 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-green-100 transition"
                 >
                   <Download size={14} /> Download PDF
                 </button>
@@ -232,6 +242,66 @@ const RegistrarReports = () => {
 
         </div>
       </div>
+
+      {/* Custom Export Modal */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsExportModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">Request Custom Export</h3>
+              <button onClick={() => setIsExportModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition">
+                <span className="text-2xl font-bold">×</span>
+              </button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setIsExporting(true);
+              const formData = new FormData(e.target);
+              const tId = toast.loading("Sending export request to IT Support...");
+              setTimeout(() => {
+                toast.success(`Custom "${formData.get('reportType')}" export request submitted!`, { id: tId });
+                setIsExporting(false);
+                setIsExportModalOpen(false);
+              }, 1500);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Report Type</label>
+                  <select required name="reportType" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition text-gray-700">
+                    <option value="Enrollment Summary">Enrollment Summary</option>
+                    <option value="Graduation Analysis">Graduation Analysis</option>
+                    <option value="GPA Distribution">GPA Distribution</option>
+                    <option value="Department Comparison">Department Comparison</option>
+                    <option value="Custom SQL Query">Custom SQL Query</option>
+                  </select>
+                </div>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">From Date</label>
+                    <input required name="fromDate" type="date" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-gray-500 mb-1">To Date</label>
+                    <input required name="toDate" type="date" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Notes / Specific Requirements</label>
+                  <textarea rows="3" name="notes" placeholder="Describe any specific filters or data requirements..." className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition resize-none"></textarea>
+                </div>
+              </div>
+              <div className="mt-6 flex gap-3">
+                <button type="button" onClick={() => setIsExportModalOpen(false)} disabled={isExporting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={isExporting}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20 disabled:opacity-50 flex items-center justify-center">
+                  {isExporting ? "Submitting..." : "Submit Request"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

@@ -22,6 +22,19 @@ import {
 
 const RegistrarProfile = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [digitalSig, setDigitalSig] = useState(true);
+  const [sealVerif, setSealVerif] = useState(false);
+  const [notifPref, setNotifPref] = useState(true);
+
+  const [profile, setProfile] = useState({
+    name: "Dr. David Okello",
+    title: "Chief University Registrar",
+    email: "david.okello@university.ac.ke",
+    phone: "+254 712 345 678",
+    office: "Main Campus, Admin Block A",
+  });
 
   const activityLogs = [
     { action: "Approved Registration", student: "John Kamau", time: "10 mins ago", icon: CheckCircle, color: "text-green-600" },
@@ -61,8 +74,8 @@ const RegistrarProfile = () => {
             <div className="pt-14 pb-8 px-6">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">Dr. David Okello</h2>
-                  <p className="text-sm text-gray-400 font-medium uppercase tracking-wider">Chief University Registrar</p>
+                  <h2 className="text-xl font-bold text-gray-800">{profile.name}</h2>
+                  <p className="text-sm text-gray-400 font-medium uppercase tracking-wider">{profile.title}</p>
                 </div>
                 <button 
                   onClick={() => setIsEditModalOpen(true)}
@@ -75,15 +88,15 @@ const RegistrarProfile = () => {
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <div className="p-2 bg-gray-50 rounded-lg text-gray-400"><Mail size={16} /></div>
-                  david.okello@university.ac.ke
+                  {profile.email}
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <div className="p-2 bg-gray-50 rounded-lg text-gray-400"><Phone size={16} /></div>
-                  +254 712 345 678
+                  {profile.phone}
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <div className="p-2 bg-gray-50 rounded-lg text-gray-400"><MapPin size={16} /></div>
-                  Main Campus, Admin Block A
+                  {profile.office}
                 </div>
               </div>
 
@@ -105,7 +118,7 @@ const RegistrarProfile = () => {
             <h3 className="font-bold text-gray-800 mb-4">Quick Settings</h3>
             <div className="space-y-2">
               <button 
-                onClick={() => toast('Password change modal coming soon', { icon: '🔐' })}
+                onClick={() => setIsPasswordModalOpen(true)}
                 className="w-full p-3 rounded-2xl hover:bg-gray-50 transition text-left flex items-center justify-between group"
               >
                 <div className="flex items-center gap-3">
@@ -115,14 +128,16 @@ const RegistrarProfile = () => {
                 <ChevronRight size={16} className="text-gray-300 group-hover:text-blue-600 transition" />
               </button>
               <button 
-                onClick={() => toast.success('Preferences opened')}
+                onClick={() => { setNotifPref(!notifPref); toast.success(`Notification preferences ${!notifPref ? 'enabled' : 'muted'}`); }}
                 className="w-full p-3 rounded-2xl hover:bg-gray-50 transition text-left flex items-center justify-between group"
               >
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-orange-50 text-orange-600 rounded-xl"><Bell size={16} /></div>
-                  <span className="text-sm font-semibold text-gray-700">Notification Prefs</span>
+                  <span className="text-sm font-semibold text-gray-700">Notifications {notifPref ? 'On' : 'Off'}</span>
                 </div>
-                <ChevronRight size={16} className="text-gray-300 group-hover:text-orange-600 transition" />
+                <div className={`w-8 h-5 rounded-full relative transition-colors ${notifPref ? 'bg-green-500' : 'bg-gray-200'}`}>
+                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${notifPref ? 'right-0.5' : 'left-0.5'}`} />
+                </div>
               </button>
               <button 
                 onClick={() => toast.success('Signing out...')}
@@ -154,22 +169,26 @@ const RegistrarProfile = () => {
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Document Signing</h4>
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-green-100 transition">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-green-100 transition cursor-pointer"
+                  onClick={() => { setDigitalSig(!digitalSig); toast.success(`Digital signature ${!digitalSig ? 'enabled' : 'disabled'}`); }}
+                >
                   <div>
                     <p className="text-sm font-bold text-gray-800">Digital Signature</p>
                     <p className="text-[10px] text-gray-400">Attached to official transcripts</p>
                   </div>
-                  <div className="w-10 h-6 bg-green-600 rounded-full relative">
-                    <div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full" />
+                  <div className={`w-10 h-6 rounded-full relative transition-colors ${digitalSig ? 'bg-green-600' : 'bg-gray-200'}`}>
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${digitalSig ? 'right-1' : 'left-1'}`} />
                   </div>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-green-100 transition">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-green-100 transition cursor-pointer"
+                  onClick={() => { setSealVerif(!sealVerif); toast.success(`Seal verification ${!sealVerif ? 'enabled' : 'disabled'}`); }}
+                >
                   <div>
                     <p className="text-sm font-bold text-gray-800">Seal Verification</p>
                     <p className="text-[10px] text-gray-400">Senate seal automation</p>
                   </div>
-                  <div className="w-10 h-6 bg-gray-200 rounded-full relative">
-                    <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full" />
+                  <div className={`w-10 h-6 rounded-full relative transition-colors ${sealVerif ? 'bg-green-600' : 'bg-gray-200'}`}>
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all ${sealVerif ? 'right-1' : 'left-1'}`} />
                   </div>
                 </div>
               </div>
@@ -249,21 +268,38 @@ const RegistrarProfile = () => {
             
             <form onSubmit={(e) => {
               e.preventDefault();
-              toast.success("Profile updated successfully!");
-              setIsEditModalOpen(false);
+              setIsSubmitting(true);
+              const fd = new FormData(e.target);
+              const updated = {
+                ...profile,
+                name: fd.get('name'),
+                email: fd.get('email'),
+                phone: fd.get('phone'),
+                office: fd.get('office'),
+              };
+              setTimeout(() => {
+                setProfile(updated);
+                toast.success("Profile updated successfully!");
+                setIsSubmitting(false);
+                setIsEditModalOpen(false);
+              }, 800);
             }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Full Name</label>
-                  <input type="text" defaultValue="Dr. David Okello" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input name="name" type="text" defaultValue={profile.name} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
-                  <input type="email" defaultValue="david.okello@university.ac.ke" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input name="email" type="email" defaultValue={profile.email} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 mb-1">Phone</label>
-                  <input type="text" defaultValue="+254 712 345 678" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                  <input name="phone" type="text" defaultValue={profile.phone} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Office Location</label>
+                  <input name="office" type="text" defaultValue={profile.office} className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition" />
                 </div>
               </div>
 
@@ -271,15 +307,75 @@ const RegistrarProfile = () => {
                 <button 
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20"
+                  disabled={isSubmitting}
+                  className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition shadow-lg shadow-green-600/20 disabled:opacity-50 flex items-center justify-center"
                 >
-                  Save Changes
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4" onClick={() => setIsPasswordModalOpen(false)}>
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><Lock size={20}/></div>
+                <h3 className="text-xl font-bold text-gray-800">Change Password</h3>
+              </div>
+              <button onClick={() => setIsPasswordModalOpen(false)} className="text-gray-400 hover:text-gray-600"><span className="text-2xl font-bold">×</span></button>
+            </div>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              setIsSubmitting(true);
+              const fd = new FormData(e.target);
+              if (fd.get('newPwd') !== fd.get('confirmPwd')) {
+                toast.error("New passwords do not match");
+                setIsSubmitting(false);
+                return;
+              }
+              if (fd.get('newPwd').length < 8) {
+                toast.error("Password must be at least 8 characters");
+                setIsSubmitting(false);
+                return;
+              }
+              setTimeout(() => {
+                toast.success("Password changed successfully!");
+                setIsSubmitting(false);
+                setIsPasswordModalOpen(false);
+              }, 1000);
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Current Password</label>
+                  <input required name="currentPwd" type="password" placeholder="••••••••" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">New Password</label>
+                  <input required name="newPwd" type="password" placeholder="••••••••" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Confirm New Password</label>
+                  <input required name="confirmPwd" type="password" placeholder="••••••••" className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 transition" />
+                </div>
+              </div>
+              <div className="mt-6 flex gap-3">
+                <button type="button" onClick={() => setIsPasswordModalOpen(false)} disabled={isSubmitting}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={isSubmitting}
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center justify-center">
+                  {isSubmitting ? 'Updating...' : 'Update Password'}
                 </button>
               </div>
             </form>
